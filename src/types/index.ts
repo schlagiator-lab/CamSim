@@ -18,4 +18,6 @@ export interface PlacedCamera {
   y: number
   rotation: number
   scale: number
+  label: string
+  showLabel: boolean
 }

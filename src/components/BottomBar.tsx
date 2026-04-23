@@ -7,7 +7,7 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 132
+  if (mode === 'cam-selected') return 150
   if (mode === 'idle') return 66
   return 60 // armed
 }
@@ -28,6 +28,8 @@ interface Props {
   onRotate: (id: string, deg: number) => void
   onResize: (id: string, scale: number) => void
   onDelete: (id: string) => void
+  onUpdateLabel: (id: string, label: string) => void
+  onToggleLabel: (id: string) => void
   onExport: () => void
 }
 
@@ -75,7 +77,7 @@ export default function BottomBar({
   mode, placedCameras, selectedCamera, canExport,
   onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
   onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
-  onRotate, onResize, onDelete, onExport,
+  onRotate, onResize, onDelete, onUpdateLabel, onToggleLabel, onExport,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
   const hasCameras = placedCameras.length > 0
@@ -231,75 +233,123 @@ export default function BottomBar({
   /* ── cam-selected : édition ── */
   if (mode === 'cam-selected' && selectedCamera && selCam) {
     return (
-      <div style={{ ...base, height: 132, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 14 }}>
+      <div style={{ ...base, height: 150, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 6 }}>
 
-        {/* Boussole 3×3 */}
-        <div style={{ flexShrink: 0 }}>
-          <div style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2, marginBottom: 4 }}>ORIENTATION</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 28px)', gap: 2 }}>
-            {DIRS.map((d, i) => {
-              if (d.a === null) {
+        {/* Ligne principale : boussole + sliders + actions */}
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: 14 }}>
+
+          {/* Boussole 3×3 */}
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2, marginBottom: 4 }}>ORIENTATION</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 28px)', gap: 2 }}>
+              {DIRS.map((d, i) => {
+                if (d.a === null) {
+                  return (
+                    <div key={i} style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono', fontSize: 8, color: '#383848' }}>
+                      {selectedCamera.rotation}°
+                    </div>
+                  )
+                }
+                const active = selectedCamera.rotation === d.d
                 return (
-                  <div key={i} style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono', fontSize: 8, color: '#383848' }}>
-                    {selectedCamera.rotation}°
-                  </div>
+                  <button
+                    key={i}
+                    onClick={() => onRotate(selectedCamera.id, d.d as number)}
+                    style={{
+                      height: 28,
+                      background: active ? 'rgba(0,212,255,0.14)' : '#14141c',
+                      border: `1px solid ${active ? '#00d4ff' : '#22222e'}`,
+                      borderRadius: 4,
+                      color: active ? '#00d4ff' : '#505060',
+                      fontSize: 14,
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: 0,
+                    }}
+                  >{d.a}</button>
                 )
-              }
-              const active = selectedCamera.rotation === d.d
-              return (
-                <button
-                  key={i}
-                  onClick={() => onRotate(selectedCamera.id, d.d as number)}
-                  style={{
-                    height: 28,
-                    background: active ? 'rgba(0,212,255,0.14)' : '#14141c',
-                    border: `1px solid ${active ? '#00d4ff' : '#22222e'}`,
-                    borderRadius: 4,
-                    color: active ? '#00d4ff' : '#505060',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: 0,
-                  }}
-                >{d.a}</button>
-              )
-            })}
+              })}
+            </div>
           </div>
+
+          <div style={{ width: 1, alignSelf: 'stretch', background: '#1a1a24', flexShrink: 0 }} />
+
+          {/* Sliders taille + rotation */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>TAILLE</span>
+              <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9 }}>{selectedCamera.scale.toFixed(2)}×</span>
+            </div>
+            <input
+              type="range" min={0.2} max={3} step={0.05}
+              value={selectedCamera.scale}
+              onChange={e => onResize(selectedCamera.id, parseFloat(e.target.value))}
+              style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, marginBottom: 2 }}>
+              <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>ROTATION</span>
+              <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9 }}>{selectedCamera.rotation}°</span>
+            </div>
+            <input
+              type="range" min={-180} max={180}
+              value={selectedCamera.rotation}
+              onChange={e => onRotate(selectedCamera.id, parseInt(e.target.value))}
+              style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+            />
+          </div>
+
+          <div style={{ width: 1, alignSelf: 'stretch', background: '#1a1a24', flexShrink: 0 }} />
+
+          {/* Actions */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <button style={btn('#555')} onClick={onDeselect}>← RETOUR</button>
+            <button style={btn('#ff3333')} onClick={() => onDelete(selectedCamera.id)}>SUPPRIMER</button>
+            {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
+          </div>
+
         </div>
 
-        <div style={{ width: 1, height: 96, background: '#1a1a24', flexShrink: 0 }} />
-
-        {/* Sliders taille + rotation */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>TAILLE</span>
-            <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9 }}>{selectedCamera.scale.toFixed(2)}×</span>
-          </div>
+        {/* Ligne étiquette */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 26 }}>
+          <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 7.5, letterSpacing: 2, flexShrink: 0 }}>ÉTIQUETTE</span>
           <input
-            type="range" min={0.2} max={3} step={0.05}
-            value={selectedCamera.scale}
-            onChange={e => onResize(selectedCamera.id, parseFloat(e.target.value))}
-            style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+            type="text"
+            value={selectedCamera.label}
+            placeholder={`${selCam.brand} ${selCam.model}`}
+            onChange={e => onUpdateLabel(selectedCamera.id, e.target.value)}
+            onClick={e => e.stopPropagation()}
+            style={{
+              flex: 1,
+              background: '#14141c',
+              border: '1px solid #2a2a3e',
+              borderRadius: 4,
+              color: '#ccc',
+              fontFamily: 'DM Mono',
+              fontSize: 9,
+              padding: '4px 8px',
+              outline: 'none',
+              minWidth: 0,
+            }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, marginBottom: 2 }}>
-            <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>ROTATION</span>
-            <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9 }}>{selectedCamera.rotation}°</span>
-          </div>
-          <input
-            type="range" min={-180} max={180}
-            value={selectedCamera.rotation}
-            onChange={e => onRotate(selectedCamera.id, parseInt(e.target.value))}
-            style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
-          />
-        </div>
-
-        <div style={{ width: 1, height: 96, background: '#1a1a24', flexShrink: 0 }} />
-
-        {/* Actions */}
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <button style={btn('#555')} onClick={onDeselect}>← RETOUR</button>
-          <button style={btn('#ff3333')} onClick={() => onDelete(selectedCamera.id)}>SUPPRIMER</button>
-          {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
+          <button
+            onClick={() => onToggleLabel(selectedCamera.id)}
+            title={selectedCamera.showLabel ? "Masquer l'étiquette" : "Afficher l'étiquette"}
+            style={{
+              flexShrink: 0,
+              background: selectedCamera.showLabel ? 'rgba(0,212,255,0.10)' : 'transparent',
+              border: `1px solid ${selectedCamera.showLabel ? 'rgba(0,212,255,0.4)' : '#333'}`,
+              borderRadius: 4,
+              color: selectedCamera.showLabel ? '#00d4ff' : '#444',
+              fontFamily: 'Orbitron',
+              fontSize: 7.5,
+              letterSpacing: 1,
+              padding: '4px 8px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {selectedCamera.showLabel ? 'VISIBLE' : 'MASQUÉ'}
+          </button>
         </div>
 
       </div>

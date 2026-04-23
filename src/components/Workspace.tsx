@@ -19,18 +19,11 @@ interface Props {
 }
 
 export default function Workspace({
-  imageData,
-  placedCameras,
-  selectedId,
-  armedCameraId,
-  workspaceH,
-  onCanvasClick,
-  onSelectCamera,
-  onMoveCamera,
-  onResizeCamera,
+  imageData, placedCameras, selectedId, armedCameraId,
+  workspaceH, onCanvasClick, onSelectCamera, onMoveCamera, onResizeCamera,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const draggingRef = useRef<{ id: string } | null>(null)
+  const draggingRef = useRef<{ id: string; pointerId: number } | null>(null)
 
   const getSvgRect = () => svgRef.current?.getBoundingClientRect() ?? null
 
@@ -43,29 +36,6 @@ export default function Workspace({
       ((e.clientY - rect.top) / rect.height) * 100,
     )
   }, [onCanvasClick])
-
-  const handleCameraMouseDown = useCallback((e: React.MouseEvent, id: string) => {
-    e.stopPropagation()
-    onSelectCamera(id)
-    draggingRef.current = { id }
-
-    const onMove = (ev: MouseEvent) => {
-      const rect = getSvgRect()
-      if (!rect || !draggingRef.current) return
-      onMoveCamera(
-        id,
-        Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100)),
-        Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100)),
-      )
-    }
-    const onUp = () => {
-      setTimeout(() => { draggingRef.current = null }, 50)
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }, [onSelectCamera, onMoveCamera])
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -96,36 +66,45 @@ export default function Workspace({
             const cx = placed.x / 100 * svgW
             const cy = placed.y / 100 * svgH
             const isSelected = placed.id === selectedId
-
-            const handleResizeMouseDown = (e: React.MouseEvent) => {
-              e.stopPropagation()
-              const rect = getSvgRect()
-              if (!rect) return
-              const mx0 = e.clientX - rect.left, my0 = e.clientY - rect.top
-              const startDist = Math.sqrt((mx0 - cx) ** 2 + (my0 - cy) ** 2)
-              if (startDist < 2) return
-              const startScale = placed.scale
-              const onMove = (ev: MouseEvent) => {
-                const r = getSvgRect()
-                if (!r) return
-                const mx = ev.clientX - r.left, my = ev.clientY - r.top
-                onResizeCamera(placed.id, startScale * Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2) / startDist)
-              }
-              const onUp = () => {
-                window.removeEventListener('mousemove', onMove)
-                window.removeEventListener('mouseup', onUp)
-              }
-              window.addEventListener('mousemove', onMove)
-              window.addEventListener('mouseup', onUp)
-            }
+            const displayLabel = placed.label || `${cam.brand} ${cam.model}`
 
             return (
               <g
                 key={placed.id}
                 transform={`translate(${cx},${cy}) rotate(${placed.rotation})`}
-                style={{ cursor: 'grab' }}
-                onMouseDown={e => handleCameraMouseDown(e, placed.id)}
               >
+                {/* Transparent hit area — seule surface cliquable/draggable */}
+                <rect
+                  x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                  fill="transparent"
+                  style={{ cursor: 'grab' }}
+                  onPointerDown={e => {
+                    e.stopPropagation()
+                    onSelectCamera(placed.id)
+                    const pointerId = e.pointerId
+                    draggingRef.current = { id: placed.id, pointerId }
+                    const onMove = (ev: PointerEvent) => {
+                      if (ev.pointerId !== pointerId || !draggingRef.current) return
+                      const rect = getSvgRect()
+                      if (!rect) return
+                      onMoveCamera(
+                        placed.id,
+                        Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100)),
+                        Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100)),
+                      )
+                    }
+                    const onUp = (ev: PointerEvent) => {
+                      if (ev.pointerId !== pointerId) return
+                      setTimeout(() => { draggingRef.current = null }, 50)
+                      window.removeEventListener('pointermove', onMove)
+                      window.removeEventListener('pointerup', onUp)
+                    }
+                    window.addEventListener('pointermove', onMove)
+                    window.addEventListener('pointerup', onUp)
+                  }}
+                />
+
+                {/* Cadre de sélection */}
                 {isSelected && (
                   <rect
                     x={-cw / 2 - 5} y={-ch / 2 - 5}
@@ -135,28 +114,59 @@ export default function Workspace({
                     style={{ pointerEvents: 'none' }}
                   />
                 )}
+
+                {/* Visuel de la caméra */}
                 <foreignObject
                   x={-cw / 2} y={-ch / 2} width={cw} height={ch}
                   style={{ overflow: 'visible', pointerEvents: 'none' }}
                 >
                   <CameraShape type={cam.type} width={cw} height={ch} />
                 </foreignObject>
-                <text
-                  x={0} y={ch / 2 + 13}
-                  textAnchor="middle" fontFamily="DM Mono"
-                  fontSize={Math.max(8, Math.min(13, cw * 0.10))}
-                  fill="#00d4ff"
-                  style={{ pointerEvents: 'none', userSelect: 'none' }}
-                >
-                  {cam.brand} {cam.model}
-                </text>
+
+                {/* Étiquette */}
+                {placed.showLabel && (
+                  <text
+                    x={0} y={ch / 2 + 14}
+                    textAnchor="middle" fontFamily="DM Mono"
+                    fontSize={Math.max(8, Math.min(13, cw * 0.12))}
+                    fill="#00d4ff"
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                  >
+                    {displayLabel}
+                  </text>
+                )}
+
+                {/* Poignées de redimensionnement */}
                 {isSelected && [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy], i) => (
                   <circle
                     key={i}
                     cx={sx * (cw / 2 + 5)} cy={sy * (ch / 2 + 5)}
                     r={5} fill="#00d4ff" stroke="#0d0d0f" strokeWidth={1.5}
                     style={{ cursor: 'nwse-resize' }}
-                    onMouseDown={handleResizeMouseDown}
+                    onPointerDown={e => {
+                      e.stopPropagation()
+                      const rect = getSvgRect()
+                      if (!rect) return
+                      const mx0 = e.clientX - rect.left, my0 = e.clientY - rect.top
+                      const startDist = Math.sqrt((mx0 - cx) ** 2 + (my0 - cy) ** 2)
+                      if (startDist < 2) return
+                      const startScale = placed.scale
+                      const pointerId = e.pointerId
+                      const onMove = (ev: PointerEvent) => {
+                        if (ev.pointerId !== pointerId) return
+                        const r = getSvgRect()
+                        if (!r) return
+                        const mx = ev.clientX - r.left, my = ev.clientY - r.top
+                        onResizeCamera(placed.id, startScale * Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2) / startDist)
+                      }
+                      const onUp = (ev: PointerEvent) => {
+                        if (ev.pointerId !== pointerId) return
+                        window.removeEventListener('pointermove', onMove)
+                        window.removeEventListener('pointerup', onUp)
+                      }
+                      window.addEventListener('pointermove', onMove)
+                      window.addEventListener('pointerup', onUp)
+                    }}
                   />
                 ))}
               </g>

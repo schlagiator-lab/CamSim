@@ -12,6 +12,7 @@ export default function App() {
   const {
     placedCameras, selectedId, setSelectedId,
     placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera,
+    updateLabel, toggleLabel,
   } = usePlacement()
 
   const [armedCameraId, setArmedCameraId] = useState<string | null>(null)
@@ -146,6 +147,8 @@ export default function App() {
           onRotate={rotateCamera}
           onResize={resizeCamera}
           onDelete={id => { deleteCamera(id); setSelectedId(null) }}
+          onUpdateLabel={updateLabel}
+          onToggleLabel={toggleLabel}
           onExport={handleExport}
         />
       </div>
