@@ -7,7 +7,7 @@ export function usePlacement() {
 
   const placeCamera = useCallback((cameraId: string, xPct: number, yPct: number) => {
     const id = `placed-${Date.now()}`
-    setPlacedCameras(prev => [...prev, { id, cameraId, x: xPct, y: yPct, rotation: 0 }])
+    setPlacedCameras(prev => [...prev, { id, cameraId, x: xPct, y: yPct, rotation: 0, scale: 1.0 }])
     setSelectedId(id)
   }, [])
 
@@ -19,10 +19,16 @@ export function usePlacement() {
     setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, rotation } : c))
   }, [])
 
+  const resizeCamera = useCallback((id: string, scale: number) => {
+    setPlacedCameras(prev =>
+      prev.map(c => c.id === id ? { ...c, scale: Math.max(0.2, Math.min(5, scale)) } : c)
+    )
+  }, [])
+
   const deleteCamera = useCallback((id: string) => {
     setPlacedCameras(prev => prev.filter(c => c.id !== id))
     setSelectedId(prev => prev === id ? null : prev)
   }, [])
 
-  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, deleteCamera }
+  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera }
 }

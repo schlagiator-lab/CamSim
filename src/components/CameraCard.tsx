@@ -32,7 +32,7 @@ export default function CameraCard({ camera, armed, onArm }: Props) {
       }}
     >
       <div style={{ width: PREVIEW_SIZE, height: PREVIEW_SIZE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <CameraShape type={camera.type} color={camera.color} width={pw} height={ph} />
+        <CameraShape type={camera.type} width={pw} height={ph} />
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: 'DM Mono', color: armed ? '#00d4ff' : '#e0e0e0', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

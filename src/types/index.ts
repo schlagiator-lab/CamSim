@@ -14,14 +14,8 @@ export interface Camera {
 export interface PlacedCamera {
   id: string
   cameraId: string
-  x: number   // % of image width (0-100)
-  y: number   // % of image height (0-100)
+  x: number
+  y: number
   rotation: number
-}
-
-export interface CalibrationData {
-  point1: { x: number; y: number }  // % coords
-  point2: { x: number; y: number }  // % coords
-  distanceMm: number
-  pixelsPerMm: number   // in natural image pixels
+  scale: number
 }
