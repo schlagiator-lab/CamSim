@@ -160,8 +160,11 @@ export default function BottomBar({
                 onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.06)' }}
                 onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#222232'; t.style.background = '#0f0f14' }}
               >
-                <div style={{ height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CameraShape type={cam.type} width={pw} height={finalH} />
+                <div style={{ height: 54, width: 80, borderRadius: 4, background: cam.images ? '#f0f0f0' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {cam.images
+                    ? <img src={cam.images.front} alt={cam.model} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : <CameraShape type={cam.type} width={pw} height={finalH} />
+                  }
                 </div>
                 <div style={{ fontFamily: 'DM Mono', color: '#ccc', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>{cam.brand}</div>
                 <div style={{ fontFamily: 'DM Mono', color: '#444', fontSize: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>{cam.model}</div>
@@ -217,8 +220,11 @@ export default function BottomBar({
                 onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.06)' }}
                 onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#222232'; t.style.background = '#0f0f14' }}
               >
-                <div style={{ height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CameraShape type={cam.type} width={pw} height={finalH} />
+                <div style={{ height: 50, width: 80, borderRadius: 4, background: cam.images ? '#f0f0f0' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {cam.images
+                    ? <img src={cam.images.front} alt={cam.model} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : <CameraShape type={cam.type} width={pw} height={finalH} />
+                  }
                 </div>
                 <div style={{ fontFamily: 'DM Mono', color: '#ccc', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>{cam.brand}</div>
                 <div style={{ fontFamily: 'DM Mono', color: '#555', fontSize: 8, textAlign: 'center' }}>#{idx + 1}</div>
@@ -302,6 +308,7 @@ export default function BottomBar({
 
           {/* Actions */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <button style={btn('#00d4ff')} onClick={onOpenPanel}>+ AJOUTER</button>
             <button style={btn('#555')} onClick={onDeselect}>← RETOUR</button>
             <button style={btn('#ff3333')} onClick={() => onDelete(selectedCamera.id)}>SUPPRIMER</button>
             {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}

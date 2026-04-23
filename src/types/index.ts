@@ -9,6 +9,11 @@ export interface Camera {
   realWidth: number
   realHeight: number
   color: string
+  images?: {
+    front: string
+    angleLeft?: string
+    angleRight?: string
+  }
 }
 
 export interface PlacedCamera {

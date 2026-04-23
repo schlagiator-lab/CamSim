@@ -6,6 +6,18 @@ import CameraShape from './CameraShape'
 
 const BASE_SCALE = 0.08
 
+/** Choisit l'image produit selon la direction pointée */
+function pickImage(images: NonNullable<{ front: string; angleLeft?: string; angleRight?: string }>, rotation: number): string {
+  const r = ((rotation % 360) + 360) % 360
+  if (images.angleLeft && images.angleRight) {
+    // droite / bas-droite / haut-droite → angle gauche du produit
+    if (r >= 315 || r < 45 || (r >= 45 && r < 135)) return images.angleLeft
+    // gauche / bas-gauche / haut-gauche → angle droit du produit
+    if (r >= 135 && r < 225) return images.angleRight
+  }
+  return images.front
+}
+
 interface Props {
   imageData: LoadedImage
   placedCameras: PlacedCamera[]
@@ -73,7 +85,7 @@ export default function Workspace({
                 key={placed.id}
                 transform={`translate(${cx},${cy}) rotate(${placed.rotation})`}
               >
-                {/* Transparent hit area — seule surface cliquable/draggable */}
+                {/* Zone de capture des événements (drag/select) */}
                 <rect
                   x={-cw / 2} y={-ch / 2} width={cw} height={ch}
                   fill="transparent"
@@ -115,13 +127,23 @@ export default function Workspace({
                   />
                 )}
 
-                {/* Visuel de la caméra */}
-                <foreignObject
-                  x={-cw / 2} y={-ch / 2} width={cw} height={ch}
-                  style={{ overflow: 'visible', pointerEvents: 'none' }}
-                >
-                  <CameraShape type={cam.type} width={cw} height={ch} />
-                </foreignObject>
+                {/* Visuel : photo produit ou SVG générique */}
+                {cam.images ? (
+                  <image
+                    href={pickImage(cam.images, placed.rotation)}
+                    x={-cw / 2} y={-ch / 2}
+                    width={cw} height={ch}
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{ mixBlendMode: 'multiply', pointerEvents: 'none' } as React.CSSProperties}
+                  />
+                ) : (
+                  <foreignObject
+                    x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                    style={{ overflow: 'visible', pointerEvents: 'none' }}
+                  >
+                    <CameraShape type={cam.type} width={cw} height={ch} />
+                  </foreignObject>
+                )}
 
                 {/* Étiquette */}
                 {placed.showLabel && (

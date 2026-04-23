@@ -1,6 +1,42 @@
 import type { Camera } from '../types'
 
+const base = import.meta.env.BASE_URL
+const cam = (f: string) => `${base}cameras/${f}`
+
 export const cameras: Camera[] = [
+  /* ── Caméras avec photos produit réelles ── */
+  {
+    id: 'axis-m3085v',
+    brand: 'Axis',
+    model: 'M3085-V',
+    type: 'dome',
+    label: 'Mini Dôme 2MP',
+    realWidth: 100,
+    realHeight: 100,
+    color: '#d4d4d4',
+    images: {
+      front:      cam('axis-m3085v-front.webp'),
+      angleLeft:  cam('axis-m3085v-angle-left.webp'),
+      angleRight: cam('axis-m3085v-angle-right.webp'),
+    },
+  },
+  {
+    id: 'axis-p1475le',
+    brand: 'Axis',
+    model: 'P1475-LE',
+    type: 'bullet',
+    label: 'Bullet Ext. 5MP',
+    realWidth: 100,
+    realHeight: 100,
+    color: '#c8c8c8',
+    images: {
+      front:      cam('axis-p1475le-front.webp'),
+      angleLeft:  cam('axis-p1475le-angle-left.webp'),
+      angleRight: cam('axis-p1475le-angle-right.webp'),
+    },
+  },
+
+  /* ── Caméras génériques SVG ── */
   {
     id: 'hik-ds2cd2183g2',
     brand: 'Hikvision',
