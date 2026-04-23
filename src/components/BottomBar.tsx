@@ -31,8 +31,8 @@ const DIRS = [
 ] as const
 
 const base: React.CSSProperties = {
-  background: 'rgba(9,9,13,0.97)',
-  borderTop: '1px solid #191921',
+  background: '#0a0a10',
+  borderTop: '1px solid #2a2a3e',
   flexShrink: 0,
 }
 
@@ -71,25 +71,25 @@ export default function BottomBar({
   /* ── idle ── */
   if (mode === 'idle') {
     return (
-      <div style={{ ...base, height: 60, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10 }}>
+      <div style={{ ...base, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, height: 'calc(60px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <button
           onClick={onOpenPanel}
           style={{
-            flex: 1, height: 38,
-            background: 'transparent',
-            border: '1px dashed #282834',
+            flex: 1, height: 42,
+            background: 'rgba(0,212,255,0.07)',
+            border: '1px solid rgba(0,212,255,0.35)',
             borderRadius: 8,
             color: '#00d4ff',
             fontFamily: 'Orbitron',
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: 2,
             cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           }}
-          onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.05)' }}
-          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#282834'; t.style.background = 'transparent' }}
+          onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.14)' }}
+          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(0,212,255,0.35)'; t.style.background = 'rgba(0,212,255,0.07)' }}
         >
-          <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
+          <span style={{ fontSize: 20, lineHeight: 1, fontWeight: 300 }}>+</span>
           AJOUTER UNE CAMÉRA
         </button>
         {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}

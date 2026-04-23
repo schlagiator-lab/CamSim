@@ -57,7 +57,7 @@ export default function App() {
   /* ── No image: full-screen upload ── */
   if (!imageData) {
     return (
-      <div style={{ width: '100vw', height: '100vh', background: '#0d0d0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
+      <div style={{ width: '100vw', height: '100dvh', background: '#0d0d0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
         <div style={{ fontFamily: 'Orbitron', fontSize: 26, color: '#00d4ff', letterSpacing: 5 }}>CAMSIM</div>
         <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: '#282838', letterSpacing: 2 }}>camera placement tool</div>
         <div style={{ width: 360 }}>
@@ -69,9 +69,14 @@ export default function App() {
 
   /* ── Image loaded: workspace + contextual bottom bar ── */
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', overflow: 'hidden', background: '#0d0d0f' }}>
-      {/* Workspace fills all remaining space */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
+    <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflow: 'hidden', background: '#0d0d0f' }}>
+      {/* Workspace: fills all space above the bottom bar */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        bottom: `${barH}px`,
+        overflow: 'hidden',
+      }}>
         <Workspace
           imageData={imageData}
           placedCameras={placedCameras}
@@ -98,20 +103,26 @@ export default function App() {
         </label>
       </div>
 
-      {/* Contextual bottom bar */}
-      <BottomBar
-        mode={mode}
-        selectedCamera={selectedCamera}
-        canExport={canExport}
-        onOpenPanel={handleOpenPanel}
-        onClosePanel={() => setShowPanel(false)}
-        onSelectCamera={handleSelectCamera}
-        onCancelArmed={() => setArmedCameraId(null)}
-        onRotate={rotateCamera}
-        onResize={resizeCamera}
-        onDelete={id => { deleteCamera(id); setSelectedId(null) }}
-        onExport={handleExport}
-      />
+      {/* Bottom bar: pinned to the bottom */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0, left: 0, right: 0,
+        zIndex: 10,
+      }}>
+        <BottomBar
+          mode={mode}
+          selectedCamera={selectedCamera}
+          canExport={canExport}
+          onOpenPanel={handleOpenPanel}
+          onClosePanel={() => setShowPanel(false)}
+          onSelectCamera={handleSelectCamera}
+          onCancelArmed={() => setArmedCameraId(null)}
+          onRotate={rotateCamera}
+          onResize={resizeCamera}
+          onDelete={id => { deleteCamera(id); setSelectedId(null) }}
+          onExport={handleExport}
+        />
+      </div>
     </div>
   )
 }
