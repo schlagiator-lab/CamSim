@@ -2,22 +2,29 @@ import type { PlacedCamera } from '../types'
 import { cameras } from '../data/cameras'
 import CameraShape from './CameraShape'
 
-export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-selected'
+export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'cam-selected'
 
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
+  if (mode === 'cam-edit-list') return 152
   if (mode === 'cam-selected') return 132
-  return 60
+  if (mode === 'idle') return 66
+  return 60 // armed
 }
 
 interface Props {
   mode: BottomMode
+  placedCameras: PlacedCamera[]
   selectedCamera: PlacedCamera | null
   canExport: boolean
   onOpenPanel: () => void
   onClosePanel: () => void
+  onOpenEditList: () => void
+  onCloseEditList: () => void
   onSelectCamera: (id: string) => void
+  onSelectForEdit: (id: string) => void
   onCancelArmed: () => void
+  onDeselect: () => void
   onRotate: (id: string, deg: number) => void
   onResize: (id: string, scale: number) => void
   onDelete: (id: string) => void
@@ -43,7 +50,7 @@ const btn = (color: string): React.CSSProperties => ({
   color,
   fontFamily: 'Orbitron',
   fontSize: 9,
-  padding: '7px 12px',
+  padding: '5px 10px',
   cursor: 'pointer',
   letterSpacing: 1,
 })
@@ -55,54 +62,78 @@ const exportBtn: React.CSSProperties = {
   color: '#000',
   fontFamily: 'Orbitron',
   fontSize: 9,
-  padding: '7px 12px',
+  padding: '5px 10px',
   cursor: 'pointer',
   letterSpacing: 1,
   fontWeight: 700,
 }
 
+const safeH = (px: number) =>
+  `calc(${px}px + env(safe-area-inset-bottom, 0px))` as const
+
 export default function BottomBar({
-  mode, selectedCamera, canExport,
-  onOpenPanel, onClosePanel, onSelectCamera, onCancelArmed,
+  mode, placedCameras, selectedCamera, canExport,
+  onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
+  onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
   onRotate, onResize, onDelete, onExport,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
+  const hasCameras = placedCameras.length > 0
 
-  /* ── idle ── */
+  /* ── idle : deux onglets ── */
   if (mode === 'idle') {
+    const tabStyle = (active: boolean, disabled: boolean): React.CSSProperties => ({
+      flex: 1,
+      height: 48,
+      background: active ? 'rgba(0,212,255,0.10)' : disabled ? 'transparent' : 'rgba(0,212,255,0.04)',
+      border: `1px solid ${active ? '#00d4ff' : disabled ? 'rgba(0,212,255,0.10)' : 'rgba(0,212,255,0.28)'}`,
+      borderRadius: 8,
+      color: disabled ? 'rgba(0,212,255,0.22)' : '#00d4ff',
+      fontFamily: 'Orbitron',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 3,
+      padding: '4px 6px',
+      pointerEvents: disabled ? 'none' as const : 'auto' as const,
+    })
     return (
-      <div style={{ ...base, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, height: 'calc(60px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div style={{ ...base, height: safeH(66), paddingBottom: 'env(safe-area-inset-bottom, 0px)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
         <button
           onClick={onOpenPanel}
-          style={{
-            flex: 1, height: 42,
-            background: 'rgba(0,212,255,0.07)',
-            border: '1px solid rgba(0,212,255,0.35)',
-            borderRadius: 8,
-            color: '#00d4ff',
-            fontFamily: 'Orbitron',
-            fontSize: 11,
-            letterSpacing: 2,
-            cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          }}
+          style={tabStyle(false, false)}
           onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.14)' }}
-          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(0,212,255,0.35)'; t.style.background = 'rgba(0,212,255,0.07)' }}
+          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(0,212,255,0.28)'; t.style.background = 'rgba(0,212,255,0.04)' }}
         >
-          <span style={{ fontSize: 20, lineHeight: 1, fontWeight: 300 }}>+</span>
-          AJOUTER UNE CAMÉRA
+          <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 300 }}>+</span>
+          <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>AJOUTER UNE CAMÉRA</span>
         </button>
-        {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
+        <button
+          onClick={hasCameras ? onOpenEditList : undefined}
+          style={tabStyle(false, !hasCameras)}
+          onMouseEnter={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.14)' }}
+          onMouseLeave={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = 'rgba(0,212,255,0.28)'; t.style.background = 'rgba(0,212,255,0.04)' }}
+        >
+          <span style={{ fontSize: 15, lineHeight: 1 }}>✎</span>
+          <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MODIFIER UNE CAMÉRA</span>
+        </button>
+        {canExport && (
+          <button style={{ ...exportBtn, height: 48, padding: '5px 12px', flexShrink: 0 }} onClick={onExport}>
+            EXPORTER
+          </button>
+        )}
       </div>
     )
   }
 
-  /* ── cam-select ── */
+  /* ── cam-select : choix du modèle ── */
   if (mode === 'cam-select') {
     return (
       <div style={{ ...base, height: 152, display: 'flex', flexDirection: 'column', padding: '10px 20px 8px', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'Orbitron', color: '#444', fontSize: 9, letterSpacing: 2 }}>CHOISIR UNE CAMÉRA</span>
+          <span style={{ fontFamily: 'Orbitron', color: '#444', fontSize: 9, letterSpacing: 2 }}>CHOISIR UN MODÈLE</span>
           <button
             onClick={onClosePanel}
             style={{ background: 'none', border: '1px solid #282834', borderRadius: 4, color: '#555', cursor: 'pointer', fontSize: 14, lineHeight: 1, width: 24, height: 24 }}
@@ -111,28 +142,24 @@ export default function BottomBar({
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
           {cameras.map(cam => {
             const asp = cam.realWidth / cam.realHeight
-            const previewH = 52
-            const previewW = asp >= 1 ? previewH * asp : previewH
-            const pw = asp >= 1 ? Math.min(previewW, 84) : previewH * asp
-            const ph = asp >= 1 ? pw / asp : previewH
+            const ph = 52
+            const pw = asp >= 1 ? Math.min(ph * asp, 84) : ph * asp
+            const finalH = asp >= 1 ? pw / asp : ph
             return (
               <button
                 key={cam.id}
                 onClick={() => onSelectCamera(cam.id)}
                 style={{
                   flexShrink: 0, width: 96,
-                  background: '#0f0f14',
-                  border: '1px solid #222232',
-                  borderRadius: 8,
-                  padding: '7px 5px 6px',
-                  cursor: 'pointer',
+                  background: '#0f0f14', border: '1px solid #222232', borderRadius: 8,
+                  padding: '7px 5px 6px', cursor: 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 }}
                 onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.06)' }}
                 onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#222232'; t.style.background = '#0f0f14' }}
               >
                 <div style={{ height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CameraShape type={cam.type} width={pw} height={ph} />
+                  <CameraShape type={cam.type} width={pw} height={finalH} />
                 </div>
                 <div style={{ fontFamily: 'DM Mono', color: '#ccc', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>{cam.brand}</div>
                 <div style={{ fontFamily: 'DM Mono', color: '#444', fontSize: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>{cam.model}</div>
@@ -144,7 +171,7 @@ export default function BottomBar({
     )
   }
 
-  /* ── armed ── */
+  /* ── armed : attente du clic ── */
   if (mode === 'armed') {
     return (
       <div style={{ ...base, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', gap: 16 }}>
@@ -156,12 +183,57 @@ export default function BottomBar({
     )
   }
 
-  /* ── cam-selected ── */
+  /* ── cam-edit-list : sélection de la caméra à modifier ── */
+  if (mode === 'cam-edit-list') {
+    return (
+      <div style={{ ...base, height: 152, display: 'flex', flexDirection: 'column', padding: '10px 20px 8px', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: 'Orbitron', color: '#444', fontSize: 9, letterSpacing: 2 }}>SÉLECTIONNER UNE CAMÉRA</span>
+          <button
+            onClick={onCloseEditList}
+            style={{ background: 'none', border: '1px solid #282834', borderRadius: 4, color: '#555', cursor: 'pointer', fontSize: 14, lineHeight: 1, width: 24, height: 24 }}
+          >×</button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+          {placedCameras.map((placed, idx) => {
+            const cam = cameras.find(c => c.id === placed.cameraId)
+            if (!cam) return null
+            const asp = cam.realWidth / cam.realHeight
+            const ph = 48
+            const pw = asp >= 1 ? Math.min(ph * asp, 80) : ph * asp
+            const finalH = asp >= 1 ? pw / asp : ph
+            return (
+              <button
+                key={placed.id}
+                onClick={() => onSelectForEdit(placed.id)}
+                style={{
+                  flexShrink: 0, width: 96,
+                  background: '#0f0f14', border: '1px solid #222232', borderRadius: 8,
+                  padding: '7px 5px 6px', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                }}
+                onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.06)' }}
+                onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#222232'; t.style.background = '#0f0f14' }}
+              >
+                <div style={{ height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CameraShape type={cam.type} width={pw} height={finalH} />
+                </div>
+                <div style={{ fontFamily: 'DM Mono', color: '#ccc', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>{cam.brand}</div>
+                <div style={{ fontFamily: 'DM Mono', color: '#555', fontSize: 8, textAlign: 'center' }}>#{idx + 1}</div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  /* ── cam-selected : édition ── */
   if (mode === 'cam-selected' && selectedCamera && selCam) {
     return (
       <div style={{ ...base, height: 132, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 14 }}>
 
-        {/* Compass 3×3 */}
+        {/* Boussole 3×3 */}
         <div style={{ flexShrink: 0 }}>
           <div style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2, marginBottom: 4 }}>ORIENTATION</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 28px)', gap: 2 }}>
@@ -197,7 +269,7 @@ export default function BottomBar({
 
         <div style={{ width: 1, height: 96, background: '#1a1a24', flexShrink: 0 }} />
 
-        {/* Sliders */}
+        {/* Sliders taille + rotation */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
             <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>TAILLE</span>
@@ -225,7 +297,7 @@ export default function BottomBar({
 
         {/* Actions */}
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <button style={btn('#00d4ff')} onClick={onOpenPanel}>+ CAMÉRA</button>
+          <button style={btn('#555')} onClick={onDeselect}>← RETOUR</button>
           <button style={btn('#ff3333')} onClick={() => onDelete(selectedCamera.id)}>SUPPRIMER</button>
           {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
         </div>

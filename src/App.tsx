@@ -16,12 +16,14 @@ export default function App() {
 
   const [armedCameraId, setArmedCameraId] = useState<string | null>(null)
   const [showPanel, setShowPanel] = useState(false)
+  const [showEditList, setShowEditList] = useState(false)
 
   const selectedCamera = placedCameras.find(p => p.id === selectedId) ?? null
 
   const mode: BottomMode =
     showPanel ? 'cam-select' :
     armedCameraId ? 'armed' :
+    showEditList ? 'cam-edit-list' :
     selectedId ? 'cam-selected' :
     'idle'
 
@@ -34,6 +36,7 @@ export default function App() {
       return
     }
     setSelectedId(null)
+    setShowEditList(false)
   }
 
   const handleSelectCamera = (cameraId: string) => {
@@ -43,8 +46,26 @@ export default function App() {
 
   const handleOpenPanel = () => {
     setShowPanel(true)
+    setShowEditList(false)
     setArmedCameraId(null)
     setSelectedId(null)
+  }
+
+  const handleOpenEditList = () => {
+    setShowEditList(true)
+    setShowPanel(false)
+    setArmedCameraId(null)
+    setSelectedId(null)
+  }
+
+  const handleSelectForEdit = (id: string) => {
+    setSelectedId(id)
+    setShowEditList(false)
+  }
+
+  const handleDeselect = () => {
+    setSelectedId(null)
+    setShowEditList(false)
   }
 
   const handleExport = async () => {
@@ -57,7 +78,7 @@ export default function App() {
   /* ── No image: full-screen upload ── */
   if (!imageData) {
     return (
-      <div style={{ width: '100vw', height: '100dvh', background: '#0d0d0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
+      <div style={{ width: '100dvw', height: '100dvh', background: '#0d0d0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
         <div style={{ fontFamily: 'Orbitron', fontSize: 26, color: '#00d4ff', letterSpacing: 5 }}>CAMSIM</div>
         <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: '#282838', letterSpacing: 2 }}>camera placement tool</div>
         <div style={{ width: 360 }}>
@@ -69,7 +90,7 @@ export default function App() {
 
   /* ── Image loaded: workspace + contextual bottom bar ── */
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflow: 'hidden', background: '#0d0d0f' }}>
+    <div style={{ position: 'relative', width: '100dvw', height: '100dvh', overflow: 'hidden', background: '#0d0d0f' }}>
       {/* Workspace: fills all space above the bottom bar */}
       <div style={{
         position: 'absolute',
@@ -82,7 +103,7 @@ export default function App() {
           placedCameras={placedCameras}
           selectedId={selectedId}
           armedCameraId={armedCameraId}
-          workspaceH={`calc(100vh - ${barH}px)`}
+          workspaceH={`calc(100dvh - ${barH}px)`}
           onCanvasClick={handleCanvasClick}
           onSelectCamera={setSelectedId}
           onMoveCamera={moveCamera}
@@ -111,12 +132,17 @@ export default function App() {
       }}>
         <BottomBar
           mode={mode}
+          placedCameras={placedCameras}
           selectedCamera={selectedCamera}
           canExport={canExport}
           onOpenPanel={handleOpenPanel}
           onClosePanel={() => setShowPanel(false)}
+          onOpenEditList={handleOpenEditList}
+          onCloseEditList={() => setShowEditList(false)}
           onSelectCamera={handleSelectCamera}
+          onSelectForEdit={handleSelectForEdit}
           onCancelArmed={() => setArmedCameraId(null)}
+          onDeselect={handleDeselect}
           onRotate={rotateCamera}
           onResize={resizeCamera}
           onDelete={id => { deleteCamera(id); setSelectedId(null) }}
