@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useImageLoader } from './hooks/useImageLoader'
 import { usePlacement } from './hooks/usePlacement'
 import { exportImage } from './utils/exportImage'
 import UploadZone from './components/UploadZone'
 import Workspace from './components/Workspace'
 import BottomBar, { getBarHeight } from './components/BottomBar'
+import DPad from './components/DPad'
 import type { BottomMode } from './components/BottomBar'
 
 export default function App() {
@@ -69,6 +70,16 @@ export default function App() {
     setShowEditList(false)
   }
 
+  const handleNudge = useCallback((dx: number, dy: number) => {
+    if (!selectedId) return
+    const cam = placedCameras.find(p => p.id === selectedId)
+    if (!cam) return
+    moveCamera(selectedId,
+      Math.max(0, Math.min(100, cam.x + dx)),
+      Math.max(0, Math.min(100, cam.y + dy)),
+    )
+  }, [selectedId, placedCameras, moveCamera])
+
   const handleExport = async () => {
     if (!imageData) return
     await exportImage(imageData, placedCameras)
@@ -110,6 +121,18 @@ export default function App() {
           onMoveCamera={moveCamera}
           onResizeCamera={resizeCamera}
         />
+        {/* D-pad déplacement précis */}
+        {selectedId && (
+          <div style={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            zIndex: 20,
+          }}>
+            <DPad onNudge={handleNudge} />
+          </div>
+        )}
+
         {/* Watermark / re-import */}
         <label
           style={{ position: 'absolute', top: 12, left: 16, zIndex: 20, cursor: 'pointer', userSelect: 'none' }}
