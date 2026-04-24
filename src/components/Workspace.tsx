@@ -91,7 +91,7 @@ export default function Workspace({
                 <rect
                   x={-cw / 2} y={-ch / 2} width={cw} height={ch}
                   fill="transparent"
-                  style={{ cursor: 'grab' }}
+                  style={{ cursor: armedCameraId ? 'crosshair' : 'grab', pointerEvents: armedCameraId ? 'none' : 'auto' }}
                   onPointerDown={e => {
                     e.stopPropagation()
                     onSelectCamera(placed.id)
