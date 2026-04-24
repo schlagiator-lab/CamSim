@@ -4,6 +4,25 @@ import { cameras } from '../data/cameras'
 
 const BASE_SCALE = 0.08
 
+type CamImages = NonNullable<import('../types').Camera['images']>
+
+function pickImage(rotation: number, images: CamImages): string {
+  const rot = ((rotation % 360) + 360) % 360
+  if (rot < 45 || rot >= 315) return images.angleRight ?? images.front
+  if (rot < 135) return images.front
+  if (rot < 225) return images.angleLeft ?? images.front
+  return images.front
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise(res => {
+    const img = new Image()
+    img.onload = () => res(img)
+    img.onerror = () => res(img)
+    img.src = src
+  })
+}
+
 function drawDome(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const r = Math.min(w, h) / 2
   const cx = w / 2, cy = h / 2
@@ -138,12 +157,17 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
 
     ctx.save()
     ctx.translate(px, py)
-    ctx.rotate((placed.rotation * Math.PI) / 180)
-    ctx.translate(-cw / 2, -ch / 2)
 
-    if (cam.type === 'dome' || cam.type === 'fisheye') drawDome(ctx, cw, ch)
-    else if (cam.type === 'bullet') drawBullet(ctx, cw, ch)
-    else if (cam.type === 'ptz') drawPtz(ctx, cw, ch)
+    if (cam.images) {
+      const camImg = await loadImage(pickImage(placed.rotation, cam.images))
+      ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
+    } else {
+      ctx.rotate((placed.rotation * Math.PI) / 180)
+      ctx.translate(-cw / 2, -ch / 2)
+      if (cam.type === 'dome' || cam.type === 'fisheye') drawDome(ctx, cw, ch)
+      else if (cam.type === 'bullet') drawBullet(ctx, cw, ch)
+      else if (cam.type === 'ptz') drawPtz(ctx, cw, ch)
+    }
 
     ctx.restore()
 
