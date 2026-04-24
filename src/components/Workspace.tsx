@@ -131,24 +131,16 @@ export default function Workspace({
 
                 {/* Visuel : photo produit ou SVG générique */}
                 {cam.images ? (
-                  <>
-                    {/* Fond blanc pour que les images webp ressortent sur le plan */}
-                    <rect
-                      x={-cw / 2} y={-ch / 2} width={cw} height={ch}
-                      fill="white" rx={3}
-                      style={{ pointerEvents: 'none' }}
-                    />
-                    <image
-                      href={pickImage(placed.rotation, cam.images)}
-                      x={-cw / 2} y={-ch / 2}
-                      width={cw} height={ch}
-                      preserveAspectRatio="xMidYMid meet"
-                      style={{
-                        filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.7))',
-                        pointerEvents: 'none',
-                      } as React.CSSProperties}
-                    />
-                  </>
+                  <image
+                    href={pickImage(placed.rotation, cam.images)}
+                    x={-cw / 2} y={-ch / 2}
+                    width={cw} height={ch}
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{
+                      filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7)) drop-shadow(0 2px 8px rgba(0,0,0,0.65))',
+                      pointerEvents: 'none',
+                    } as React.CSSProperties}
+                  />
                 ) : (
                   <foreignObject
                     x={-cw / 2} y={-ch / 2} width={cw} height={ch}
