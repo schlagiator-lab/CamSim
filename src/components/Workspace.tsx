@@ -6,15 +6,13 @@ import CameraShape from './CameraShape'
 
 const BASE_SCALE = 0.08
 
-/** Choisit l'image produit selon la direction pointée */
-function pickImage(images: NonNullable<{ front: string; angleLeft?: string; angleRight?: string }>, rotation: number): string {
-  const r = ((rotation % 360) + 360) % 360
-  if (images.angleLeft && images.angleRight) {
-    // droite / bas-droite / haut-droite → angle gauche du produit
-    if (r >= 315 || r < 45 || (r >= 45 && r < 135)) return images.angleLeft
-    // gauche / bas-gauche / haut-gauche → angle droit du produit
-    if (r >= 135 && r < 225) return images.angleRight
-  }
+type CamImages = NonNullable<import('../types').Camera['images']>
+
+function pickImage(rotation: number, images: CamImages): string {
+  const rot = ((rotation % 360) + 360) % 360
+  if (rot < 45 || rot >= 315) return images.angleRight ?? images.front
+  if (rot < 135) return images.front
+  if (rot < 225) return images.angleLeft ?? images.front
   return images.front
 }
 
@@ -80,12 +78,16 @@ export default function Workspace({
             const isSelected = placed.id === selectedId
             const displayLabel = placed.label || `${cam.brand} ${cam.model}`
 
+            // Images: no SVG rotation (image itself encodes direction via pickImage).
+            // SVG shapes: rotate normally.
+            const groupRotation = cam.images ? 0 : placed.rotation
+
             return (
               <g
                 key={placed.id}
-                transform={`translate(${cx},${cy}) rotate(${placed.rotation})`}
+                transform={`translate(${cx},${cy}) rotate(${groupRotation})`}
               >
-                {/* Zone de capture des événements (drag/select) */}
+                {/* Zone de capture (drag / select) */}
                 <rect
                   x={-cw / 2} y={-ch / 2} width={cw} height={ch}
                   fill="transparent"
@@ -129,13 +131,24 @@ export default function Workspace({
 
                 {/* Visuel : photo produit ou SVG générique */}
                 {cam.images ? (
-                  <image
-                    href={pickImage(cam.images, placed.rotation)}
-                    x={-cw / 2} y={-ch / 2}
-                    width={cw} height={ch}
-                    preserveAspectRatio="xMidYMid meet"
-                    style={{ mixBlendMode: 'multiply', pointerEvents: 'none' } as React.CSSProperties}
-                  />
+                  <>
+                    {/* Fond blanc pour que les images webp ressortent sur le plan */}
+                    <rect
+                      x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                      fill="white" rx={3}
+                      style={{ pointerEvents: 'none' }}
+                    />
+                    <image
+                      href={pickImage(placed.rotation, cam.images)}
+                      x={-cw / 2} y={-ch / 2}
+                      width={cw} height={ch}
+                      preserveAspectRatio="xMidYMid meet"
+                      style={{
+                        filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.7))',
+                        pointerEvents: 'none',
+                      } as React.CSSProperties}
+                    />
+                  </>
                 ) : (
                   <foreignObject
                     x={-cw / 2} y={-ch / 2} width={cw} height={ch}
