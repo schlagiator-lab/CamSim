@@ -7,7 +7,7 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 150
+  if (mode === 'cam-selected') return 172
   if (mode === 'idle') return 66
   return 60 // armed
 }
@@ -239,7 +239,7 @@ export default function BottomBar({
   /* ── cam-selected : édition ── */
   if (mode === 'cam-selected' && selectedCamera && selCam) {
     return (
-      <div style={{ ...base, height: 150, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 6 }}>
+      <div style={{ ...base, height: 172, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 6 }}>
 
         {/* Ligne principale : boussole + sliders + actions */}
         <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: 14 }}>
