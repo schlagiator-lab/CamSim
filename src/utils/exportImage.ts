@@ -171,14 +171,16 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
 
     ctx.restore()
 
-    ctx.save()
-    ctx.translate(px, py + ch / 2 + 16)
-    ctx.fillStyle = '#00d4ff'
-    ctx.font = `${Math.max(12, Math.min(22, cw * 0.10))}px "DM Mono", monospace`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    ctx.fillText(`${cam.brand} ${cam.model}`, 0, 0)
-    ctx.restore()
+    if (placed.showLabel) {
+      ctx.save()
+      ctx.translate(px, py + ch / 2 + 16)
+      ctx.fillStyle = '#00d4ff'
+      ctx.font = `${Math.max(12, Math.min(22, cw * 0.10))}px "DM Mono", monospace`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(placed.label, 0, 0)
+      ctx.restore()
+    }
   }
 
   const link = document.createElement('a')
