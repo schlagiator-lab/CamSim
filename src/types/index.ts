@@ -1,4 +1,4 @@
-export type CameraType = 'dome' | 'bullet' | 'ptz' | 'fisheye'
+export type CameraType = 'dome' | 'bullet' | 'ptz' | 'fisheye' | 'nvr'
 
 export interface Camera {
   id: string
@@ -14,6 +14,12 @@ export interface Camera {
     angleLeft?: string
     angleRight?: string
   }
+  /* Comment `images` réagit à la rotation :
+     - 'discrete' (défaut) : bascule entre front/angleLeft/angleRight selon l'angle.
+     - 'mirror' : une seule photo, retournée horizontalement (miroir) à gauche.
+     - 'free' : une seule photo, tourne librement comme une icône vectorielle
+       (utile pour une fixation murale, au prix d'un léger défaut de perspective). */
+  orientationMode?: 'discrete' | 'mirror' | 'free'
 }
 
 export interface PlacedCamera {

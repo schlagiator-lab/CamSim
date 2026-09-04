@@ -14,6 +14,12 @@ function pickImage(rotation: number, images: CamImages): string {
   return images.front
 }
 
+/* Doit rester identique au découpage de Workspace.tsx pour que l'export corresponde à l'aperçu. */
+function isMirroredBucket(rotation: number): boolean {
+  const rot = ((rotation % 360) + 360) % 360
+  return rot >= 135 && rot < 225
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise(res => {
     const img = new Image()
@@ -159,8 +165,17 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
     ctx.translate(px, py)
 
     if (cam.images) {
-      const camImg = await loadImage(pickImage(placed.rotation, cam.images))
-      ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
+      const orientationMode = cam.orientationMode ?? 'discrete'
+      if (orientationMode === 'free') {
+        ctx.rotate((placed.rotation * Math.PI) / 180)
+        const camImg = await loadImage(cam.images.front)
+        ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
+      } else {
+        if (orientationMode === 'mirror' && isMirroredBucket(placed.rotation)) ctx.scale(-1, 1)
+        const href = orientationMode === 'mirror' ? cam.images.front : pickImage(placed.rotation, cam.images)
+        const camImg = await loadImage(href)
+        ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
+      }
     } else {
       ctx.rotate((placed.rotation * Math.PI) / 180)
       ctx.translate(-cw / 2, -ch / 2)

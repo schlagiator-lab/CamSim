@@ -34,6 +34,13 @@ function pickImage(rotation: number, images: CamImages): string {
   return images.front
 }
 
+/* Même découpage angulaire que pickImage, pour le mode 'mirror' (une seule photo,
+   retournée horizontalement côté gauche plutôt que remplacée par une 2e image). */
+function isMirroredBucket(rotation: number): boolean {
+  const rot = ((rotation % 360) + 360) % 360
+  return rot >= 135 && rot < 225
+}
+
 interface Props {
   imageData: LoadedImage
   placedCameras: PlacedCamera[]
@@ -103,9 +110,12 @@ export default function Workspace({
             const isSelected = placed.id === selectedId
             const displayLabel = placed.label || `${cam.brand} ${cam.model}`
 
-            // Images: no SVG rotation (image itself encodes direction via pickImage).
-            // SVG shapes: rotate normally.
-            const groupRotation = cam.images ? 0 : placed.rotation
+            // Images 'discrete'/'mirror' : pas de rotation SVG (la photo elle-même encode
+            // la direction, ou reste figée avec un simple miroir). Images 'free' et formes
+            // vectorielles : rotation SVG normale.
+            const orientationMode: NonNullable<import('../types').Camera['orientationMode']> =
+              cam.images ? (cam.orientationMode ?? 'discrete') : 'free'
+            const groupRotation = orientationMode === 'free' ? placed.rotation : 0
 
             return (
               <g
@@ -157,10 +167,11 @@ export default function Workspace({
                 {/* Visuel : photo produit ou SVG générique */}
                 {cam.images ? (
                   <image
-                    href={pickImage(placed.rotation, cam.images)}
+                    href={orientationMode === 'discrete' ? pickImage(placed.rotation, cam.images) : cam.images.front}
                     x={-cw / 2} y={-ch / 2}
                     width={cw} height={ch}
                     preserveAspectRatio="xMidYMid meet"
+                    transform={orientationMode === 'mirror' && isMirroredBucket(placed.rotation) ? 'scale(-1,1)' : undefined}
                     style={{
                       filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7)) drop-shadow(0 2px 8px rgba(0,0,0,0.65))',
                       pointerEvents: 'none',

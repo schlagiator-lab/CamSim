@@ -263,6 +263,50 @@ export default function BottomBar({
     return (
       <div style={{ ...base, height: 172, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 6 }}>
 
+        {/* Ligne étiquette : remontée en haut du panneau pour rester visible même si le bas
+            de l'écran est rogné (barre d'adresse mobile, encoche, etc.) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 26, flexShrink: 0 }}>
+          <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 7.5, letterSpacing: 2, flexShrink: 0 }}>ÉTIQUETTE</span>
+          <input
+            type="text"
+            value={selectedCamera.label}
+            placeholder={`${selCam.brand} ${selCam.model}`}
+            onChange={e => onUpdateLabel(selectedCamera.id, e.target.value)}
+            onClick={e => e.stopPropagation()}
+            style={{
+              flex: 1,
+              background: '#14141c',
+              border: '1px solid #2a2a3e',
+              borderRadius: 4,
+              color: '#ccc',
+              fontFamily: 'DM Mono',
+              fontSize: 9,
+              padding: '4px 8px',
+              outline: 'none',
+              minWidth: 0,
+            }}
+          />
+          <button
+            onClick={() => onToggleLabel(selectedCamera.id)}
+            title={selectedCamera.showLabel ? "Masquer l'étiquette" : "Afficher l'étiquette"}
+            style={{
+              flexShrink: 0,
+              background: selectedCamera.showLabel ? 'rgba(0,212,255,0.10)' : 'transparent',
+              border: `1px solid ${selectedCamera.showLabel ? 'rgba(0,212,255,0.4)' : '#333'}`,
+              borderRadius: 4,
+              color: selectedCamera.showLabel ? '#00d4ff' : '#444',
+              fontFamily: 'Orbitron',
+              fontSize: 7.5,
+              letterSpacing: 1,
+              padding: '4px 8px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {selectedCamera.showLabel ? 'VISIBLE' : 'MASQUÉ'}
+          </button>
+        </div>
+
         {/* Ligne principale : boussole + sliders + actions */}
         <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: 14 }}>
 
@@ -339,49 +383,6 @@ export default function BottomBar({
             {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
           </div>
 
-        </div>
-
-        {/* Ligne étiquette */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 26 }}>
-          <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 7.5, letterSpacing: 2, flexShrink: 0 }}>ÉTIQUETTE</span>
-          <input
-            type="text"
-            value={selectedCamera.label}
-            placeholder={`${selCam.brand} ${selCam.model}`}
-            onChange={e => onUpdateLabel(selectedCamera.id, e.target.value)}
-            onClick={e => e.stopPropagation()}
-            style={{
-              flex: 1,
-              background: '#14141c',
-              border: '1px solid #2a2a3e',
-              borderRadius: 4,
-              color: '#ccc',
-              fontFamily: 'DM Mono',
-              fontSize: 9,
-              padding: '4px 8px',
-              outline: 'none',
-              minWidth: 0,
-            }}
-          />
-          <button
-            onClick={() => onToggleLabel(selectedCamera.id)}
-            title={selectedCamera.showLabel ? "Masquer l'étiquette" : "Afficher l'étiquette"}
-            style={{
-              flexShrink: 0,
-              background: selectedCamera.showLabel ? 'rgba(0,212,255,0.10)' : 'transparent',
-              border: `1px solid ${selectedCamera.showLabel ? 'rgba(0,212,255,0.4)' : '#333'}`,
-              borderRadius: 4,
-              color: selectedCamera.showLabel ? '#00d4ff' : '#444',
-              fontFamily: 'Orbitron',
-              fontSize: 7.5,
-              letterSpacing: 1,
-              padding: '4px 8px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {selectedCamera.showLabel ? 'VISIBLE' : 'MASQUÉ'}
-          </button>
         </div>
 
       </div>
