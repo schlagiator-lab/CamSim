@@ -51,6 +51,7 @@ interface Props {
   onSelectCamera: (id: string) => void
   onMoveCamera: (id: string, xPct: number, yPct: number) => void
   onResizeCamera: (id: string, scale: number) => void
+  onRotate: (id: string, deg: number) => void
   onZoomChange?: (zoom: number) => void
 }
 
@@ -63,9 +64,16 @@ const CAM_SIZE_MIN = 0.1
 const CAM_SIZE_MAX = 3.0
 const clampCamSize = (v: number) => Math.max(CAM_SIZE_MIN, Math.min(CAM_SIZE_MAX, v))
 
+const COMPASS_CELL = 34
+const DIRS = [
+  { a: '↖', d: 225 }, { a: '↑', d: 270 }, { a: '↗', d: 315 },
+  { a: '←', d: 180 }, { a: null, d: null }, { a: '→', d: 0 },
+  { a: '↙', d: 135 }, { a: '↓', d: 90 }, { a: '↘', d: 45 },
+] as const
+
 const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
   imageData, placedCameras, selectedId, armedCameraId,
-  workspaceH, onCanvasClick, onSelectCamera, onMoveCamera, onResizeCamera, onZoomChange,
+  workspaceH, onCanvasClick, onSelectCamera, onMoveCamera, onResizeCamera, onRotate, onZoomChange,
 }, ref) {
   const svgRef = useRef<SVGSVGElement>(null)
   const draggingRef = useRef<{ id: string; pointerId: number } | null>(null)
@@ -285,6 +293,45 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
           style={{ ...ZOOM_BTN, opacity: selectedCamera ? 1 : 0.4, cursor: selectedCamera ? 'pointer' : 'default' }}
         >−</button>
       </div>
+
+      {/* Orientation de la caméra sélectionnée : boussole 3×3 superposée, centrée entre
+          la taille (à gauche) et le déplacement au D-pad (à droite) */}
+      {selectedCamera && (
+        <div
+          onPointerDown={e => e.stopPropagation()}
+          style={{
+            position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 20, display: 'grid', gridTemplateColumns: `repeat(3, ${COMPASS_CELL}px)`, gap: 4,
+          }}
+        >
+          {DIRS.map((d, i) => {
+            if (d.a === null) {
+              return (
+                <div
+                  key={i}
+                  style={{ ...ZOOM_BTN, width: COMPASS_CELL, height: COMPASS_CELL, fontSize: 8, fontFamily: 'DM Mono', cursor: 'default' }}
+                >
+                  {selectedCamera.rotation}°
+                </div>
+              )
+            }
+            const active = selectedCamera.rotation === d.d
+            return (
+              <button
+                key={i}
+                onClick={() => onRotate(selectedCamera.id, d.d as number)}
+                title={`Orienter à ${d.d}°`}
+                style={{
+                  ...ZOOM_BTN,
+                  width: COMPASS_CELL, height: COMPASS_CELL, fontSize: 15,
+                  background: active ? 'rgba(0,212,255,0.28)' : ZOOM_BTN.background,
+                  border: active ? '1px solid #00d4ff' : ZOOM_BTN.border,
+                }}
+              >{d.a}</button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 })

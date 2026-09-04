@@ -217,6 +217,7 @@ export default function App() {
           onSelectCamera={setSelectedId}
           onMoveCamera={moveCamera}
           onResizeCamera={resizeCamera}
+          onRotate={rotateCamera}
           onZoomChange={setImageZoom}
         />
         {/* D-pad déplacement précis */}
@@ -267,7 +268,6 @@ export default function App() {
           onSelectForEdit={handleSelectForEdit}
           onCancelArmed={() => setArmedCameraId(null)}
           onDeselect={handleDeselect}
-          onRotate={rotateCamera}
           onResize={resizeCamera}
           onDelete={handleDelete}
           onDuplicate={duplicateCamera}

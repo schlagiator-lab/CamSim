@@ -18,7 +18,8 @@ type Gesture =
 
 /**
  * Zoom + pan tactile/souris sur une zone (pincement à 2 doigts, glisser à 1 doigt,
- * molette avec Ctrl/Cmd pour zoomer sous le curseur, double-clic pour zoomer/dézoomer).
+ * molette avec Ctrl/Cmd pour zoomer sous le curseur). Pas de zoom au double-clic/double-tap :
+ * ça se déclenchait accidentellement en tapant vite sur les boutons superposés (taille caméra).
  * Les caméras placées gardent leurs propres gestionnaires (drag, redimension) qui
  * stoppent la propagation : ce hook ne s'applique qu'au fond (photo vide).
  */
@@ -76,13 +77,6 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap, onZoomChange }: Us
     if (z0 <= 0) return
     zoomBy(target / z0, undefined, animate)
   }, [zoomBy])
-
-  const resetView = useCallback(() => {
-    setTransitioning(true)
-    window.setTimeout(() => setTransitioning(false), 180)
-    setZoomState(1)
-    setPan({ x: 0, y: 0 })
-  }, [])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -169,12 +163,6 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap, onZoomChange }: Us
     window.addEventListener('pointercancel', handleUp)
   }, [clampZoom, clampPan, onTap])
 
-  const onDoubleClick = useCallback((e: React.MouseEvent) => {
-    const { zoom: z0 } = stateRef.current
-    if (z0 > 1.05) resetView()
-    else zoomBy(2.5 / z0, { x: e.clientX, y: e.clientY })
-  }, [zoomBy, resetView])
-
   /* Molette : Ctrl/Cmd (ou pincement trackpad) zoome sous le curseur, sinon déplace la vue.
      Écouteur natif non-passif requis pour pouvoir bloquer le zoom/scroll de la page. */
   useEffect(() => {
@@ -205,11 +193,7 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap, onZoomChange }: Us
       transformOrigin: 'center center',
       transition: transitioning ? 'transform 0.18s ease-out' : 'none',
     } as React.CSSProperties,
-    viewportProps: { onPointerDown, onDoubleClick },
-    zoomIn: () => zoomBy(1.5),
-    zoomOut: () => zoomBy(1 / 1.5),
+    viewportProps: { onPointerDown },
     setZoom: setZoomAbsolute,
-    resetView,
-    isZoomed: zoom > 1.001,
   }
 }

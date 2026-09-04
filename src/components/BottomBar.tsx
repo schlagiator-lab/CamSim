@@ -8,7 +8,7 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 250
+  if (mode === 'cam-selected') return 165
   if (mode === 'idle') return 66
   return 60 // armed
 }
@@ -26,7 +26,6 @@ interface Props {
   onSelectForEdit: (id: string) => void
   onCancelArmed: () => void
   onDeselect: () => void
-  onRotate: (id: string, deg: number) => void
   onResize: (id: string, scale: number) => void
   onDelete: (id: string) => void
   onDuplicate: (id: string) => void
@@ -41,12 +40,6 @@ interface Props {
 const IMAGE_ZOOM_MIN = 0.5
 const IMAGE_ZOOM_MAX = 3.0
 const clampImageZoom = (v: number) => Math.max(IMAGE_ZOOM_MIN, Math.min(IMAGE_ZOOM_MAX, v))
-
-const DIRS = [
-  { a: '↖', d: 225 }, { a: '↑', d: 270 }, { a: '↗', d: 315 },
-  { a: '←', d: 180 }, { a: null, d: null }, { a: '→', d: 0 },
-  { a: '↙', d: 135 }, { a: '↓', d: 90 },  { a: '↘', d: 45 },
-] as const
 
 const base: React.CSSProperties = {
   background: '#0a0a10',
@@ -86,7 +79,7 @@ export default function BottomBar({
   mode, placedCameras, selectedCamera, canExport,
   onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
   onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
-  onRotate, onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onUpdateLabelColor, onExport,
+  onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onUpdateLabelColor, onExport,
   imageZoom, onImageZoomChange,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
@@ -264,7 +257,7 @@ export default function BottomBar({
   /* ── cam-selected : édition ── */
   if (mode === 'cam-selected' && selectedCamera && selCam) {
     return (
-      <div style={{ ...base, height: 250, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 7 }}>
+      <div style={{ ...base, height: 165, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 7 }}>
 
         {/* Ligne étiquette : remontée en haut du panneau pour rester visible même si le bas
             de l'écran est rogné (barre d'adresse mobile, encoche, etc.) */}
@@ -324,40 +317,6 @@ export default function BottomBar({
           >
             {selectedCamera.showLabel ? 'VISIBLE' : 'MASQUÉ'}
           </button>
-        </div>
-
-        {/* Boussole 3×3 : remontée juste sous l'étiquette pour rester accessible sans scroller */}
-        <div style={{ flexShrink: 0 }}>
-          <div style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2, marginBottom: 4 }}>ORIENTATION</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 24px)', gap: 2 }}>
-            {DIRS.map((d, i) => {
-              if (d.a === null) {
-                return (
-                  <div key={i} style={{ height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono', fontSize: 8, color: '#383848' }}>
-                    {selectedCamera.rotation}°
-                  </div>
-                )
-              }
-              const active = selectedCamera.rotation === d.d
-              return (
-                <button
-                  key={i}
-                  onClick={() => onRotate(selectedCamera.id, d.d as number)}
-                  style={{
-                    height: 24,
-                    background: active ? 'rgba(0,212,255,0.14)' : '#14141c',
-                    border: `1px solid ${active ? '#00d4ff' : '#22222e'}`,
-                    borderRadius: 4,
-                    color: active ? '#00d4ff' : '#505060',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: 0,
-                  }}
-                >{d.a}</button>
-              )
-            })}
-          </div>
         </div>
 
         {/* Zoom image : contrôle le zoom de la photo (la taille de la caméra est gérée par
