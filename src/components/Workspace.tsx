@@ -268,39 +268,38 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
         </div>
       </div>
 
-      {/* Taille de la caméra sélectionnée : boutons +/- superposés sur l'image */}
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 4 }}
-      >
-        <button
-          onClick={() => selectedCamera && onResizeCamera(selectedCamera.id, clampCamSize(selectedCamera.scale + CAM_SIZE_STEP))}
-          disabled={!selectedCamera}
-          title="Agrandir la caméra"
-          aria-label="Agrandir la caméra"
-          style={{ ...ZOOM_BTN, opacity: selectedCamera ? 1 : 0.4, cursor: selectedCamera ? 'pointer' : 'default' }}
-        >+</button>
+      {/* Taille de la caméra sélectionnée : boutons +/- superposés sur l'image.
+          N'apparaît que si une caméra est sélectionnée (sinon c'est un contrôle mort). */}
+      {selectedCamera && (
         <div
-          style={{ ...ZOOM_BTN, fontSize: 8, fontFamily: 'DM Mono', opacity: selectedCamera ? 1 : 0.4, cursor: 'default' }}
+          onPointerDown={e => e.stopPropagation()}
+          style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 4 }}
         >
-          {selectedCamera ? `${selectedCamera.scale.toFixed(2)}×` : '—'}
+          <button
+            onClick={() => onResizeCamera(selectedCamera.id, clampCamSize(selectedCamera.scale + CAM_SIZE_STEP))}
+            title="Agrandir la caméra"
+            aria-label="Agrandir la caméra"
+            style={ZOOM_BTN}
+          >+</button>
+          <div style={{ ...ZOOM_BTN, fontSize: 8, fontFamily: 'DM Mono', cursor: 'default' }}>
+            {selectedCamera.scale.toFixed(2)}×
+          </div>
+          <button
+            onClick={() => onResizeCamera(selectedCamera.id, clampCamSize(selectedCamera.scale - CAM_SIZE_STEP))}
+            title="Réduire la caméra"
+            aria-label="Réduire la caméra"
+            style={ZOOM_BTN}
+          >−</button>
         </div>
-        <button
-          onClick={() => selectedCamera && onResizeCamera(selectedCamera.id, clampCamSize(selectedCamera.scale - CAM_SIZE_STEP))}
-          disabled={!selectedCamera}
-          title="Réduire la caméra"
-          aria-label="Réduire la caméra"
-          style={{ ...ZOOM_BTN, opacity: selectedCamera ? 1 : 0.4, cursor: selectedCamera ? 'pointer' : 'default' }}
-        >−</button>
-      </div>
+      )}
 
-      {/* Orientation de la caméra sélectionnée : boussole 3×3 superposée, centrée entre
-          la taille (à gauche) et le déplacement au D-pad (à droite) */}
+      {/* Orientation de la caméra sélectionnée : boussole 3×3 superposée, collée à droite
+          des boutons de taille (pas centrée : ça finissait par chevaucher le D-pad à droite) */}
       {selectedCamera && (
         <div
           onPointerDown={e => e.stopPropagation()}
           style={{
-            position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+            position: 'absolute', bottom: 16, left: 16 + 38 + 12,
             zIndex: 20, display: 'grid', gridTemplateColumns: `repeat(3, ${COMPASS_CELL}px)`, gap: 4,
           }}
         >

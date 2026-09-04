@@ -144,6 +144,11 @@ export default function BottomBar({
           <span style={{ fontSize: 15, lineHeight: 1 }}>✎</span>
           <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MODIFIER UNE CAMÉRA</span>
         </button>
+        {canExport && (
+          <button style={{ ...exportBtn, height: 48, padding: '5px 12px', flexShrink: 0 }} onClick={onExport}>
+            EXPORTER
+          </button>
+        )}
       </div>
     )
   }
