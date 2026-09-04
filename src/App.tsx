@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useImageLoader } from './hooks/useImageLoader'
 import { usePlacement } from './hooks/usePlacement'
 import { exportImage } from './utils/exportImage'
@@ -150,6 +150,27 @@ export default function App() {
 
   const canExport = !!imageData && placedCameras.length > 0
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  /* Nouveau projet : reset complet (photo + caméras + sélection), avec confirmation si du travail serait perdu */
+  const handleNewProjectClick = () => {
+    const hasContent = placedCameras.length > 0
+    if (hasContent && !window.confirm('Démarrer un nouveau projet ? La photo et les caméras placées seront supprimées.')) {
+      return
+    }
+    fileInputRef.current?.click()
+  }
+
+  const handleNewProjectFile = (file: File | undefined) => {
+    if (!file) return
+    loadImage(file)
+    restorePlacedCameras([])
+    setSelectedId(null)
+    setArmedCameraId(null)
+    setShowPanel(false)
+    setShowEditList(false)
+  }
+
   /* ── Restauration en cours: écran neutre pour éviter un flash de l'écran d'accueil ── */
   if (restoring) {
     return <div style={{ width: '100dvw', height: '100dvh', background: '#0d0d0f' }} />
@@ -201,19 +222,21 @@ export default function App() {
           </div>
         )}
 
-        {/* Watermark / re-import */}
-        <label
+        {/* Watermark / nouveau projet */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,.heic"
+          style={{ display: 'none' }}
+          onChange={e => { handleNewProjectFile(e.target.files?.[0]); e.target.value = '' }}
+        />
+        <div
           style={{ position: 'absolute', top: 12, left: 16, zIndex: 20, cursor: 'pointer', userSelect: 'none' }}
-          title="Changer de photo"
+          title="Nouveau projet"
+          onClick={handleNewProjectClick}
         >
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,.heic"
-            style={{ display: 'none' }}
-            onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f) }}
-          />
           <span style={{ fontFamily: 'Orbitron', color: 'rgba(0,212,255,0.30)', fontSize: 10, letterSpacing: 3 }}>CAMSIM</span>
-        </label>
+        </div>
       </div>
 
       {/* Bottom bar: pinned to the bottom */}
