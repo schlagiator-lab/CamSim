@@ -80,7 +80,7 @@ export const cameras: Camera[] = [
     realWidth: 100,
     realHeight: 100,
     color: '#c8c8c8',
-    images: { front: cam('NVR2.png') },
+    images: { front: cam('NVR2.webp') },
     orientationMode: 'free',
   },
   {
