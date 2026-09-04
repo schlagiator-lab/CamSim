@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react'
 
-const STEP = 0.4
+export const STEP = 0.4
 const HOLD_DELAY = 280
 const HOLD_INTERVAL = 70
 

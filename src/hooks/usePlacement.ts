@@ -30,6 +30,17 @@ export function usePlacement() {
     setSelectedId(prev => prev === id ? null : prev)
   }, [])
 
+  const duplicateCamera = useCallback((id: string) => {
+    const newId = `placed-${Date.now()}`
+    setPlacedCameras(prev => {
+      const src = prev.find(c => c.id === id)
+      if (!src) return prev
+      const dup: PlacedCamera = { ...src, id: newId, x: Math.min(100, src.x + 4), y: Math.min(100, src.y + 4) }
+      return [...prev, dup]
+    })
+    setSelectedId(newId)
+  }, [])
+
   const updateLabel = useCallback((id: string, label: string) => {
     setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, label } : c))
   }, [])
@@ -38,5 +49,9 @@ export function usePlacement() {
     setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, showLabel: !c.showLabel } : c))
   }, [])
 
-  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, updateLabel, toggleLabel }
+  const restorePlacedCameras = useCallback((cams: PlacedCamera[]) => {
+    setPlacedCameras(cams)
+  }, [])
+
+  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera, updateLabel, toggleLabel, restorePlacedCameras }
 }

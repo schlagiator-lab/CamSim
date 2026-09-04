@@ -1,24 +1,50 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useImageLoader } from './hooks/useImageLoader'
 import { usePlacement } from './hooks/usePlacement'
 import { exportImage } from './utils/exportImage'
+import { saveProject, loadProject } from './utils/projectStore'
 import UploadZone from './components/UploadZone'
 import Workspace from './components/Workspace'
 import BottomBar, { getBarHeight } from './components/BottomBar'
-import DPad from './components/DPad'
+import DPad, { STEP as NUDGE_STEP } from './components/DPad'
 import type { BottomMode } from './components/BottomBar'
 
 export default function App() {
   const { imageData, loadImage } = useImageLoader()
   const {
     placedCameras, selectedId, setSelectedId,
-    placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera,
-    updateLabel, toggleLabel,
+    placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera,
+    updateLabel, toggleLabel, restorePlacedCameras,
   } = usePlacement()
 
   const [armedCameraId, setArmedCameraId] = useState<string | null>(null)
   const [showPanel, setShowPanel] = useState(false)
   const [showEditList, setShowEditList] = useState(false)
+  const [restoring, setRestoring] = useState(true)
+
+  /* Restauration du dernier plan sauvegardé (photo + caméras) au chargement */
+  useEffect(() => {
+    let cancelled = false
+    loadProject().then(project => {
+      if (cancelled) return
+      if (project) {
+        loadImage(project.imageBlob)
+        restorePlacedCameras(project.placedCameras)
+      }
+      setRestoring(false)
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* Sauvegarde automatique (debounce) dès qu'une photo est chargée */
+  useEffect(() => {
+    if (restoring || !imageData) return
+    const t = setTimeout(() => {
+      saveProject({ imageBlob: imageData.blob, placedCameras, savedAt: Date.now() })
+    }, 500)
+    return () => clearTimeout(t)
+  }, [imageData, placedCameras, restoring])
 
   const selectedCamera = placedCameras.find(p => p.id === selectedId) ?? null
 
@@ -65,10 +91,15 @@ export default function App() {
     setShowEditList(false)
   }
 
-  const handleDeselect = () => {
+  const handleDeselect = useCallback(() => {
     setSelectedId(null)
     setShowEditList(false)
-  }
+  }, [setSelectedId])
+
+  const handleDelete = useCallback((id: string) => {
+    deleteCamera(id)
+    setSelectedId(null)
+  }, [deleteCamera, setSelectedId])
 
   const handleNudge = useCallback((dx: number, dy: number) => {
     if (!selectedId) return
@@ -80,12 +111,49 @@ export default function App() {
     )
   }, [selectedId, placedCameras, moveCamera])
 
+  /* Raccourcis clavier : Échap (annuler/désélectionner), Suppr/Retour arrière (supprimer),
+     flèches (déplacement fin) — inactifs pendant la saisie dans un champ texte. */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+      if (e.key === 'Escape') {
+        if (armedCameraId) { setArmedCameraId(null); return }
+        if (showPanel) { setShowPanel(false); return }
+        if (showEditList) { setShowEditList(false); return }
+        if (selectedId) { handleDeselect(); return }
+        return
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        e.preventDefault()
+        handleDelete(selectedId)
+        return
+      }
+
+      if (selectedId && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault()
+        const dx = e.key === 'ArrowLeft' ? -NUDGE_STEP : e.key === 'ArrowRight' ? NUDGE_STEP : 0
+        const dy = e.key === 'ArrowUp' ? -NUDGE_STEP : e.key === 'ArrowDown' ? NUDGE_STEP : 0
+        handleNudge(dx, dy)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [armedCameraId, showPanel, showEditList, selectedId, handleNudge, handleDelete, handleDeselect])
+
   const handleExport = async () => {
     if (!imageData) return
     await exportImage(imageData, placedCameras)
   }
 
   const canExport = !!imageData && placedCameras.length > 0
+
+  /* ── Restauration en cours: écran neutre pour éviter un flash de l'écran d'accueil ── */
+  if (restoring) {
+    return <div style={{ width: '100dvw', height: '100dvh', background: '#0d0d0f' }} />
+  }
 
   /* ── No image: full-screen upload ── */
   if (!imageData) {
@@ -169,7 +237,8 @@ export default function App() {
           onDeselect={handleDeselect}
           onRotate={rotateCamera}
           onResize={resizeCamera}
-          onDelete={id => { deleteCamera(id); setSelectedId(null) }}
+          onDelete={handleDelete}
+          onDuplicate={duplicateCamera}
           onUpdateLabel={updateLabel}
           onToggleLabel={toggleLabel}
           onExport={handleExport}

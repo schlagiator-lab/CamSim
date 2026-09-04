@@ -3,8 +3,26 @@ import type { PlacedCamera } from '../types'
 import type { LoadedImage } from '../hooks/useImageLoader'
 import { cameras } from '../data/cameras'
 import CameraShape from './CameraShape'
+import { useZoomPan } from '../hooks/useZoomPan'
 
 const BASE_SCALE = 0.08
+
+const ZOOM_BTN: React.CSSProperties = {
+  width: 38,
+  height: 38,
+  background: 'rgba(13,13,15,0.82)',
+  border: '1px solid rgba(0,212,255,0.30)',
+  borderRadius: 7,
+  color: '#00d4ff',
+  fontSize: 17,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  userSelect: 'none',
+  touchAction: 'none',
+  WebkitTapHighlightColor: 'transparent',
+}
 
 type CamImages = NonNullable<import('../types').Camera['images']>
 
@@ -37,34 +55,41 @@ export default function Workspace({
 
   const getSvgRect = () => svgRef.current?.getBoundingClientRect() ?? null
 
-  const handleSvgClick = useCallback((e: React.MouseEvent) => {
+  const handleTap = useCallback((clientX: number, clientY: number) => {
     if (draggingRef.current) return
     const rect = getSvgRect()
     if (!rect) return
     onCanvasClick(
-      ((e.clientX - rect.left) / rect.width) * 100,
-      ((e.clientY - rect.top) / rect.height) * 100,
+      Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)),
+      Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)),
     )
   }, [onCanvasClick])
 
+  const { zoom, viewportRef, contentStyle, viewportProps, zoomIn, zoomOut, resetView, isZoomed } =
+    useZoomPan({ onTap: handleTap, minZoom: 1, maxZoom: 5 })
+
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
-        <img
-          src={imageData.src}
-          alt="plan"
-          style={{ display: 'block', maxWidth: '100%', maxHeight: workspaceH, objectFit: 'contain', userSelect: 'none' }}
-          draggable={false}
-        />
-        <svg
-          ref={svgRef}
-          style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            cursor: armedCameraId ? 'crosshair' : 'default',
-          }}
-          onClick={handleSvgClick}
-        >
+    <div
+      ref={viewportRef}
+      {...viewportProps}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', touchAction: 'none' }}
+    >
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%', ...contentStyle }}>
+          <img
+            src={imageData.src}
+            alt="plan"
+            style={{ display: 'block', maxWidth: '100%', maxHeight: workspaceH, objectFit: 'contain', userSelect: 'none' }}
+            draggable={false}
+          />
+          <svg
+            ref={svgRef}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              cursor: armedCameraId ? 'crosshair' : 'default',
+            }}
+          >
           {placedCameras.map(placed => {
             const cam = cameras.find(c => c.id === placed.cameraId)
             if (!cam) return null
@@ -174,8 +199,15 @@ export default function Workspace({
                       e.stopPropagation()
                       const rect = getSvgRect()
                       if (!rect) return
-                      const mx0 = e.clientX - rect.left, my0 = e.clientY - rect.top
-                      const startDist = Math.sqrt((mx0 - cx) ** 2 + (my0 - cy) ** 2)
+                      // Le SVG peut être visuellement zoomé (transform CSS d'un ancêtre) : on
+                      // reconvertit les coordonnées écran en unités locales du SVG (via la
+                      // fraction dans rect, indépendante du zoom) pour comparer avec cx/cy.
+                      const toLocal = (clientX: number, clientY: number) => ({
+                        x: ((clientX - rect.left) / rect.width) * svgW,
+                        y: ((clientY - rect.top) / rect.height) * svgH,
+                      })
+                      const p0 = toLocal(e.clientX, e.clientY)
+                      const startDist = Math.sqrt((p0.x - cx) ** 2 + (p0.y - cy) ** 2)
                       if (startDist < 2) return
                       const startScale = placed.scale
                       const pointerId = e.pointerId
@@ -183,8 +215,8 @@ export default function Workspace({
                         if (ev.pointerId !== pointerId) return
                         const r = getSvgRect()
                         if (!r) return
-                        const mx = ev.clientX - r.left, my = ev.clientY - r.top
-                        onResizeCamera(placed.id, startScale * Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2) / startDist)
+                        const p = { x: ((ev.clientX - r.left) / r.width) * svgW, y: ((ev.clientY - r.top) / r.height) * svgH }
+                        onResizeCamera(placed.id, startScale * Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2) / startDist)
                       }
                       const onUp = (ev: PointerEvent) => {
                         if (ev.pointerId !== pointerId) return
@@ -200,6 +232,24 @@ export default function Workspace({
             )
           })}
         </svg>
+        </div>
+      </div>
+
+      {/* Zoom : boutons +/- et réinitialisation, indispensables pour un placement précis au doigt */}
+      <div
+        onPointerDown={e => e.stopPropagation()}
+        style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 4 }}
+      >
+        <button onClick={() => zoomIn()} title="Zoomer" aria-label="Zoomer" style={ZOOM_BTN}>+</button>
+        <button
+          onClick={() => resetView()}
+          title="Réinitialiser le zoom"
+          aria-label="Réinitialiser le zoom"
+          style={{ ...ZOOM_BTN, fontSize: 8, fontFamily: 'DM Mono', opacity: isZoomed ? 1 : 0.5 }}
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button onClick={() => zoomOut()} title="Dézoomer" aria-label="Dézoomer" style={ZOOM_BTN}>−</button>
       </div>
     </div>
   )

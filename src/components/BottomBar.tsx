@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import type { PlacedCamera } from '../types'
 import { cameras } from '../data/cameras'
 import CameraShape from './CameraShape'
@@ -7,7 +8,7 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 172
+  if (mode === 'cam-selected') return 188
   if (mode === 'idle') return 66
   return 60 // armed
 }
@@ -28,6 +29,7 @@ interface Props {
   onRotate: (id: string, deg: number) => void
   onResize: (id: string, scale: number) => void
   onDelete: (id: string) => void
+  onDuplicate: (id: string) => void
   onUpdateLabel: (id: string, label: string) => void
   onToggleLabel: (id: string) => void
   onExport: () => void
@@ -77,10 +79,30 @@ export default function BottomBar({
   mode, placedCameras, selectedCamera, canExport,
   onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
   onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
-  onRotate, onResize, onDelete, onUpdateLabel, onToggleLabel, onExport,
+  onRotate, onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onExport,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
   const hasCameras = placedCameras.length > 0
+
+  /* Confirmation de suppression en deux temps (évite un popup natif intrusif) */
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setConfirmDelete(false)
+    return () => { if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current) }
+  }, [selectedCamera?.id])
+
+  const handleDeleteClick = () => {
+    if (!selectedCamera) return
+    if (confirmDelete) {
+      if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current)
+      onDelete(selectedCamera.id)
+      return
+    }
+    setConfirmDelete(true)
+    confirmTimeoutRef.current = setTimeout(() => setConfirmDelete(false), 2500)
+  }
 
   /* ── idle : deux onglets ── */
   if (mode === 'idle') {
@@ -309,8 +331,11 @@ export default function BottomBar({
           {/* Actions */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
             <button style={btn('#00d4ff')} onClick={onOpenPanel}>+ AJOUTER</button>
+            <button style={btn('#00d4ff')} onClick={() => onDuplicate(selectedCamera.id)}>⧉ DUPLIQUER</button>
             <button style={btn('#555')} onClick={onDeselect}>← RETOUR</button>
-            <button style={btn('#ff3333')} onClick={() => onDelete(selectedCamera.id)}>SUPPRIMER</button>
+            <button style={btn(confirmDelete ? '#ff6a6a' : '#ff3333')} onClick={handleDeleteClick}>
+              {confirmDelete ? 'CONFIRMER ?' : 'SUPPRIMER'}
+            </button>
             {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
           </div>
 
