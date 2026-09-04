@@ -16,10 +16,13 @@ export interface Camera {
   }
   /* Comment `images` réagit à la rotation :
      - 'discrete' (défaut) : bascule entre front/angleLeft/angleRight selon l'angle.
-     - 'mirror' : une seule photo, retournée horizontalement (miroir) à gauche.
+     - 'mirror' : une seule photo, retournée horizontalement (miroir) pour l'autre côté.
      - 'free' : une seule photo, tourne librement comme une icône vectorielle
        (utile pour une fixation murale, au prix d'un léger défaut de perspective). */
   orientationMode?: 'discrete' | 'mirror' | 'free'
+  /* Pour orientationMode 'mirror' : sens vers lequel la photo `front` pointe nativement
+     (objectif visible à gauche ou à droite de l'image). Défaut 'right' si non précisé. */
+  frontFacing?: 'left' | 'right'
 }
 
 export interface PlacedCamera {

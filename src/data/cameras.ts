@@ -46,6 +46,7 @@ export const cameras: Camera[] = [
     color: '#d4d4d4',
     images: { front: cam('Dahua.png') },
     orientationMode: 'mirror',
+    frontFacing: 'left',
   },
   {
     id: 'dahua-dome-ir',

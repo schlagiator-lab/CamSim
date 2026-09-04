@@ -36,9 +36,15 @@ function pickImage(rotation: number, images: CamImages): string {
 
 /* Même découpage angulaire que pickImage, pour le mode 'mirror' (une seule photo,
    retournée horizontalement côté gauche plutôt que remplacée par une 2e image). */
-function isMirroredBucket(rotation: number): boolean {
+function isLeftFacingBucket(rotation: number): boolean {
   const rot = ((rotation % 360) + 360) % 360
   return rot >= 135 && rot < 225
+}
+
+/* La photo `front` pointe nativement vers `frontFacing` (droite par défaut) : on la
+   retourne quand l'angle demandé pointe du côté opposé. */
+function shouldMirror(frontFacing: 'left' | 'right' | undefined, rotation: number): boolean {
+  return isLeftFacingBucket(rotation) !== (frontFacing === 'left')
 }
 
 interface Props {
@@ -193,7 +199,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     x={-cw / 2} y={-ch / 2}
                     width={cw} height={ch}
                     preserveAspectRatio="xMidYMid meet"
-                    transform={orientationMode === 'mirror' && isMirroredBucket(placed.rotation) ? 'scale(-1,1)' : undefined}
+                    transform={orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined}
                     style={{
                       filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7)) drop-shadow(0 2px 8px rgba(0,0,0,0.65))',
                       pointerEvents: 'none',

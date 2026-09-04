@@ -15,9 +15,15 @@ function pickImage(rotation: number, images: CamImages): string {
 }
 
 /* Doit rester identique au découpage de Workspace.tsx pour que l'export corresponde à l'aperçu. */
-function isMirroredBucket(rotation: number): boolean {
+function isLeftFacingBucket(rotation: number): boolean {
   const rot = ((rotation % 360) + 360) % 360
   return rot >= 135 && rot < 225
+}
+
+/* La photo `front` pointe nativement vers `frontFacing` (droite par défaut) : on la
+   retourne quand l'angle demandé pointe du côté opposé. */
+function shouldMirror(frontFacing: 'left' | 'right' | undefined, rotation: number): boolean {
+  return isLeftFacingBucket(rotation) !== (frontFacing === 'left')
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -171,7 +177,7 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
         const camImg = await loadImage(cam.images.front)
         ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
       } else {
-        if (orientationMode === 'mirror' && isMirroredBucket(placed.rotation)) ctx.scale(-1, 1)
+        if (orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation)) ctx.scale(-1, 1)
         const href = orientationMode === 'mirror' ? cam.images.front : pickImage(placed.rotation, cam.images)
         const camImg = await loadImage(href)
         ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
