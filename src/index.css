@@ -17,3 +17,14 @@ body {
 ::-webkit-scrollbar-track { background: #0f0f14; }
 ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #00d4ff44; }
+
+.label-color-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.label-color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.label-color-swatch::-webkit-color-swatch { border: none; border-radius: 50%; }
+.label-color-swatch::-moz-color-swatch { border: none; border-radius: 50%; }

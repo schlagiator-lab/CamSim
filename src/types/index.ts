@@ -31,4 +31,5 @@ export interface PlacedCamera {
   scale: number
   label: string
   showLabel: boolean
+  labelColor?: string
 }

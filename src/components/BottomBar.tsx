@@ -8,7 +8,7 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 188
+  if (mode === 'cam-selected') return 250
   if (mode === 'idle') return 66
   return 60 // armed
 }
@@ -32,8 +32,15 @@ interface Props {
   onDuplicate: (id: string) => void
   onUpdateLabel: (id: string, label: string) => void
   onToggleLabel: (id: string) => void
+  onUpdateLabelColor: (id: string, color: string) => void
   onExport: () => void
+  imageZoom: number
+  onImageZoomChange: (zoom: number) => void
 }
+
+const IMAGE_ZOOM_MIN = 0.5
+const IMAGE_ZOOM_MAX = 3.0
+const clampImageZoom = (v: number) => Math.max(IMAGE_ZOOM_MIN, Math.min(IMAGE_ZOOM_MAX, v))
 
 const DIRS = [
   { a: '↖', d: 225 }, { a: '↑', d: 270 }, { a: '↗', d: 315 },
@@ -79,7 +86,8 @@ export default function BottomBar({
   mode, placedCameras, selectedCamera, canExport,
   onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
   onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
-  onRotate, onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onExport,
+  onRotate, onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onUpdateLabelColor, onExport,
+  imageZoom, onImageZoomChange,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
   const hasCameras = placedCameras.length > 0
@@ -143,11 +151,6 @@ export default function BottomBar({
           <span style={{ fontSize: 15, lineHeight: 1 }}>✎</span>
           <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MODIFIER UNE CAMÉRA</span>
         </button>
-        {canExport && (
-          <button style={{ ...exportBtn, height: 48, padding: '5px 12px', flexShrink: 0 }} onClick={onExport}>
-            EXPORTER
-          </button>
-        )}
       </div>
     )
   }
@@ -261,7 +264,7 @@ export default function BottomBar({
   /* ── cam-selected : édition ── */
   if (mode === 'cam-selected' && selectedCamera && selCam) {
     return (
-      <div style={{ ...base, height: 172, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 6 }}>
+      <div style={{ ...base, height: 250, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 7 }}>
 
         {/* Ligne étiquette : remontée en haut du panneau pour rester visible même si le bas
             de l'écran est rogné (barre d'adresse mobile, encoche, etc.) */}
@@ -286,6 +289,22 @@ export default function BottomBar({
               minWidth: 0,
             }}
           />
+          <input
+            type="color"
+            className="label-color-swatch"
+            value={selectedCamera.labelColor ?? '#00d4ff'}
+            onChange={e => onUpdateLabelColor(selectedCamera.id, e.target.value)}
+            onClick={e => e.stopPropagation()}
+            title="Couleur de l'étiquette"
+            style={{
+              flexShrink: 0,
+              width: 24,
+              height: 24,
+              border: '1px solid #2a2a3e',
+              background: 'transparent',
+              cursor: 'pointer',
+            }}
+          />
           <button
             onClick={() => onToggleLabel(selectedCamera.id)}
             title={selectedCamera.showLabel ? "Masquer l'étiquette" : "Afficher l'étiquette"}
@@ -307,82 +326,75 @@ export default function BottomBar({
           </button>
         </div>
 
-        {/* Ligne principale : boussole + sliders + actions */}
-        <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: 14 }}>
-
-          {/* Boussole 3×3 */}
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2, marginBottom: 4 }}>ORIENTATION</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 28px)', gap: 2 }}>
-              {DIRS.map((d, i) => {
-                if (d.a === null) {
-                  return (
-                    <div key={i} style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono', fontSize: 8, color: '#383848' }}>
-                      {selectedCamera.rotation}°
-                    </div>
-                  )
-                }
-                const active = selectedCamera.rotation === d.d
+        {/* Boussole 3×3 : remontée juste sous l'étiquette pour rester accessible sans scroller */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2, marginBottom: 4 }}>ORIENTATION</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 24px)', gap: 2 }}>
+            {DIRS.map((d, i) => {
+              if (d.a === null) {
                 return (
-                  <button
-                    key={i}
-                    onClick={() => onRotate(selectedCamera.id, d.d as number)}
-                    style={{
-                      height: 28,
-                      background: active ? 'rgba(0,212,255,0.14)' : '#14141c',
-                      border: `1px solid ${active ? '#00d4ff' : '#22222e'}`,
-                      borderRadius: 4,
-                      color: active ? '#00d4ff' : '#505060',
-                      fontSize: 14,
-                      cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      padding: 0,
-                    }}
-                  >{d.a}</button>
+                  <div key={i} style={{ height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono', fontSize: 8, color: '#383848' }}>
+                    {selectedCamera.rotation}°
+                  </div>
                 )
-              })}
-            </div>
+              }
+              const active = selectedCamera.rotation === d.d
+              return (
+                <button
+                  key={i}
+                  onClick={() => onRotate(selectedCamera.id, d.d as number)}
+                  style={{
+                    height: 24,
+                    background: active ? 'rgba(0,212,255,0.14)' : '#14141c',
+                    border: `1px solid ${active ? '#00d4ff' : '#22222e'}`,
+                    borderRadius: 4,
+                    color: active ? '#00d4ff' : '#505060',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 0,
+                  }}
+                >{d.a}</button>
+              )
+            })}
           </div>
+        </div>
 
-          <div style={{ width: 1, alignSelf: 'stretch', background: '#1a1a24', flexShrink: 0 }} />
-
-          {/* Sliders taille + rotation */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-              <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>TAILLE</span>
-              <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9 }}>{selectedCamera.scale.toFixed(2)}×</span>
-            </div>
+        {/* Zoom image : contrôle le zoom de la photo (la taille de la caméra est gérée par
+            les boutons +/- superposés sur l'image) */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ textAlign: 'center', fontFamily: 'DM Mono', textTransform: 'uppercase', color: '#555', fontSize: 9, letterSpacing: 2, marginBottom: 4 }}>
+            ZOOM IMAGE
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => onImageZoomChange(clampImageZoom(Math.round((imageZoom - 0.1) * 100) / 100))}
+              style={{ ...btn('#00d4ff'), flexShrink: 0, padding: '5px 9px' }}
+            >−</button>
             <input
-              type="range" min={0.2} max={3} step={0.05}
-              value={selectedCamera.scale}
-              onChange={e => onResize(selectedCamera.id, parseFloat(e.target.value))}
-              style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+              type="range" min={50} max={300} step={1}
+              value={Math.round(imageZoom * 100)}
+              onChange={e => onImageZoomChange(parseInt(e.target.value, 10) / 100)}
+              style={{ flex: 1, accentColor: '#00d4ff', margin: 0 }}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, marginBottom: 2 }}>
-              <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 8, letterSpacing: 2 }}>ROTATION</span>
-              <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9 }}>{selectedCamera.rotation}°</span>
-            </div>
-            <input
-              type="range" min={-180} max={180}
-              value={selectedCamera.rotation}
-              onChange={e => onRotate(selectedCamera.id, parseInt(e.target.value))}
-              style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
-            />
+            <button
+              onClick={() => onImageZoomChange(clampImageZoom(Math.round((imageZoom + 0.1) * 100) / 100))}
+              style={{ ...btn('#00d4ff'), flexShrink: 0, padding: '5px 9px' }}
+            >+</button>
           </div>
-
-          <div style={{ width: 1, alignSelf: 'stretch', background: '#1a1a24', flexShrink: 0 }} />
-
-          {/* Actions */}
-          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <button style={btn('#00d4ff')} onClick={onOpenPanel}>+ AJOUTER</button>
-            <button style={btn('#00d4ff')} onClick={() => onDuplicate(selectedCamera.id)}>⧉ DUPLIQUER</button>
-            <button style={btn('#555')} onClick={onDeselect}>← RETOUR</button>
-            <button style={btn(confirmDelete ? '#ff6a6a' : '#ff3333')} onClick={handleDeleteClick}>
-              {confirmDelete ? 'CONFIRMER ?' : 'SUPPRIMER'}
-            </button>
-            {canExport && <button style={exportBtn} onClick={onExport}>EXPORTER</button>}
+          <div style={{ textAlign: 'center', fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9, marginTop: 3 }}>
+            {Math.round(imageZoom * 100)}%
           </div>
+        </div>
 
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <button style={{ ...btn('#00d4ff'), flex: 1 }} onClick={onOpenPanel}>+ AJOUTER</button>
+          <button style={{ ...btn('#00d4ff'), flex: 1 }} onClick={() => onDuplicate(selectedCamera.id)}>⧉ DUPLIQUER</button>
+          <button style={{ ...btn('#555'), flex: 1 }} onClick={onDeselect}>← RETOUR</button>
+          <button style={{ ...btn(confirmDelete ? '#ff6a6a' : '#ff3333'), flex: 1 }} onClick={handleDeleteClick}>
+            {confirmDelete ? 'CONFIRMER ?' : 'SUPPRIMER'}
+          </button>
         </div>
 
       </div>

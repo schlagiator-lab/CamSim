@@ -8,19 +8,26 @@ import Workspace from './components/Workspace'
 import BottomBar, { getBarHeight } from './components/BottomBar'
 import DPad, { STEP as NUDGE_STEP } from './components/DPad'
 import type { BottomMode } from './components/BottomBar'
+import type { WorkspaceHandle } from './components/Workspace'
 
 export default function App() {
   const { imageData, loadImage } = useImageLoader()
   const {
     placedCameras, selectedId, setSelectedId,
     placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera,
-    updateLabel, toggleLabel, restorePlacedCameras,
+    updateLabel, toggleLabel, updateLabelColor, restorePlacedCameras,
   } = usePlacement()
 
   const [armedCameraId, setArmedCameraId] = useState<string | null>(null)
   const [showPanel, setShowPanel] = useState(false)
   const [showEditList, setShowEditList] = useState(false)
   const [restoring, setRestoring] = useState(true)
+  const [imageZoom, setImageZoom] = useState(1)
+  const workspaceRef = useRef<WorkspaceHandle>(null)
+
+  const handleImageZoomChange = useCallback((zoom: number) => {
+    workspaceRef.current?.setZoom(zoom)
+  }, [])
 
   /* Restauration du dernier plan sauvegardé (photo + caméras) au chargement */
   useEffect(() => {
@@ -200,6 +207,7 @@ export default function App() {
         overflow: 'hidden',
       }}>
         <Workspace
+          ref={workspaceRef}
           imageData={imageData}
           placedCameras={placedCameras}
           selectedId={selectedId}
@@ -209,6 +217,7 @@ export default function App() {
           onSelectCamera={setSelectedId}
           onMoveCamera={moveCamera}
           onResizeCamera={resizeCamera}
+          onZoomChange={setImageZoom}
         />
         {/* D-pad déplacement précis */}
         {selectedId && (
@@ -264,7 +273,10 @@ export default function App() {
           onDuplicate={duplicateCamera}
           onUpdateLabel={updateLabel}
           onToggleLabel={toggleLabel}
+          onUpdateLabelColor={updateLabelColor}
           onExport={handleExport}
+          imageZoom={imageZoom}
+          onImageZoomChange={handleImageZoomChange}
         />
       </div>
     </div>

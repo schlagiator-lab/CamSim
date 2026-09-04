@@ -7,7 +7,7 @@ export function usePlacement() {
 
   const placeCamera = useCallback((cameraId: string, xPct: number, yPct: number) => {
     const id = `placed-${Date.now()}`
-    setPlacedCameras(prev => [...prev, { id, cameraId, x: xPct, y: yPct, rotation: 0, scale: 1.0, label: '', showLabel: true }])
+    setPlacedCameras(prev => [...prev, { id, cameraId, x: xPct, y: yPct, rotation: 0, scale: 1.0, label: '', showLabel: true, labelColor: '#00d4ff' }])
     setSelectedId(id)
   }, [])
 
@@ -21,7 +21,7 @@ export function usePlacement() {
 
   const resizeCamera = useCallback((id: string, scale: number) => {
     setPlacedCameras(prev =>
-      prev.map(c => c.id === id ? { ...c, scale: Math.max(0.2, Math.min(5, scale)) } : c)
+      prev.map(c => c.id === id ? { ...c, scale: Math.max(0.1, Math.min(3.0, scale)) } : c)
     )
   }, [])
 
@@ -49,9 +49,13 @@ export function usePlacement() {
     setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, showLabel: !c.showLabel } : c))
   }, [])
 
+  const updateLabelColor = useCallback((id: string, labelColor: string) => {
+    setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, labelColor } : c))
+  }, [])
+
   const restorePlacedCameras = useCallback((cams: PlacedCamera[]) => {
     setPlacedCameras(cams)
   }, [])
 
-  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera, updateLabel, toggleLabel, restorePlacedCameras }
+  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera, updateLabel, toggleLabel, updateLabelColor, restorePlacedCameras }
 }

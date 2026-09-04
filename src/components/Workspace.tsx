@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import type { PlacedCamera } from '../types'
 import type { LoadedImage } from '../hooks/useImageLoader'
 import { cameras } from '../data/cameras'
@@ -51,12 +51,22 @@ interface Props {
   onSelectCamera: (id: string) => void
   onMoveCamera: (id: string, xPct: number, yPct: number) => void
   onResizeCamera: (id: string, scale: number) => void
+  onZoomChange?: (zoom: number) => void
 }
 
-export default function Workspace({
+export interface WorkspaceHandle {
+  setZoom: (zoom: number) => void
+}
+
+const CAM_SIZE_STEP = 0.05
+const CAM_SIZE_MIN = 0.1
+const CAM_SIZE_MAX = 3.0
+const clampCamSize = (v: number) => Math.max(CAM_SIZE_MIN, Math.min(CAM_SIZE_MAX, v))
+
+const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
   imageData, placedCameras, selectedId, armedCameraId,
-  workspaceH, onCanvasClick, onSelectCamera, onMoveCamera, onResizeCamera,
-}: Props) {
+  workspaceH, onCanvasClick, onSelectCamera, onMoveCamera, onResizeCamera, onZoomChange,
+}, ref) {
   const svgRef = useRef<SVGSVGElement>(null)
   const draggingRef = useRef<{ id: string; pointerId: number } | null>(null)
 
@@ -72,8 +82,12 @@ export default function Workspace({
     )
   }, [onCanvasClick])
 
-  const { zoom, viewportRef, contentStyle, viewportProps, zoomIn, zoomOut, resetView, isZoomed } =
-    useZoomPan({ onTap: handleTap, minZoom: 1, maxZoom: 5 })
+  const { viewportRef, contentStyle, viewportProps, setZoom } =
+    useZoomPan({ onTap: handleTap, minZoom: 0.5, maxZoom: 3, onZoomChange })
+
+  useImperativeHandle(ref, () => ({ setZoom }), [setZoom])
+
+  const selectedCamera = placedCameras.find(p => p.id === selectedId) ?? null
 
   return (
     <div
@@ -192,7 +206,7 @@ export default function Workspace({
                     x={0} y={ch / 2 + 14}
                     textAnchor="middle" fontFamily="DM Mono"
                     fontSize={Math.max(8, Math.min(13, cw * 0.12))}
-                    fill="#00d4ff"
+                    fill={placed.labelColor ?? '#00d4ff'}
                     style={{ pointerEvents: 'none', userSelect: 'none' }}
                   >
                     {displayLabel}
@@ -246,22 +260,33 @@ export default function Workspace({
         </div>
       </div>
 
-      {/* Zoom : boutons +/- et réinitialisation, indispensables pour un placement précis au doigt */}
+      {/* Taille de la caméra sélectionnée : boutons +/- superposés sur l'image */}
       <div
         onPointerDown={e => e.stopPropagation()}
         style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 4 }}
       >
-        <button onClick={() => zoomIn()} title="Zoomer" aria-label="Zoomer" style={ZOOM_BTN}>+</button>
         <button
-          onClick={() => resetView()}
-          title="Réinitialiser le zoom"
-          aria-label="Réinitialiser le zoom"
-          style={{ ...ZOOM_BTN, fontSize: 8, fontFamily: 'DM Mono', opacity: isZoomed ? 1 : 0.5 }}
+          onClick={() => selectedCamera && onResizeCamera(selectedCamera.id, clampCamSize(selectedCamera.scale + CAM_SIZE_STEP))}
+          disabled={!selectedCamera}
+          title="Agrandir la caméra"
+          aria-label="Agrandir la caméra"
+          style={{ ...ZOOM_BTN, opacity: selectedCamera ? 1 : 0.4, cursor: selectedCamera ? 'pointer' : 'default' }}
+        >+</button>
+        <div
+          style={{ ...ZOOM_BTN, fontSize: 8, fontFamily: 'DM Mono', opacity: selectedCamera ? 1 : 0.4, cursor: 'default' }}
         >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button onClick={() => zoomOut()} title="Dézoomer" aria-label="Dézoomer" style={ZOOM_BTN}>−</button>
+          {selectedCamera ? `${selectedCamera.scale.toFixed(2)}×` : '—'}
+        </div>
+        <button
+          onClick={() => selectedCamera && onResizeCamera(selectedCamera.id, clampCamSize(selectedCamera.scale - CAM_SIZE_STEP))}
+          disabled={!selectedCamera}
+          title="Réduire la caméra"
+          aria-label="Réduire la caméra"
+          style={{ ...ZOOM_BTN, opacity: selectedCamera ? 1 : 0.4, cursor: selectedCamera ? 'pointer' : 'default' }}
+        >−</button>
       </div>
     </div>
   )
-}
+})
+
+export default Workspace

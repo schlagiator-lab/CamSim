@@ -4,6 +4,7 @@ export interface UseZoomPanOptions {
   minZoom?: number
   maxZoom?: number
   onTap?: (clientX: number, clientY: number) => void
+  onZoomChange?: (zoom: number) => void
 }
 
 interface Point { x: number; y: number }
@@ -21,9 +22,9 @@ type Gesture =
  * Les caméras placées gardent leurs propres gestionnaires (drag, redimension) qui
  * stoppent la propagation : ce hook ne s'applique qu'au fond (photo vide).
  */
-export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap }: UseZoomPanOptions) {
+export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap, onZoomChange }: UseZoomPanOptions) {
   const viewportRef = useRef<HTMLDivElement>(null)
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoomState] = useState(1)
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 })
   const [transitioning, setTransitioning] = useState(false)
 
@@ -66,14 +67,20 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap }: UseZoomPanOption
     const point = atClient ?? (rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: 0, y: 0 })
     const { zoom: nz, pan: np } = zoomAtClientPoint(point.x, point.y, z0 * factor, p0, z0)
     if (animate) { setTransitioning(true); window.setTimeout(() => setTransitioning(false), 180) }
-    setZoom(nz)
+    setZoomState(nz)
     setPan(clampPan(np, nz))
   }, [zoomAtClientPoint, clampPan])
+
+  const setZoomAbsolute = useCallback((target: number, animate = true) => {
+    const { zoom: z0 } = stateRef.current
+    if (z0 <= 0) return
+    zoomBy(target / z0, undefined, animate)
+  }, [zoomBy])
 
   const resetView = useCallback(() => {
     setTransitioning(true)
     window.setTimeout(() => setTransitioning(false), 180)
-    setZoom(1)
+    setZoomState(1)
     setPan({ x: 0, y: 0 })
   }, [])
 
@@ -128,7 +135,7 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap }: UseZoomPanOption
         const cx = rect ? rect.left + rect.width / 2 : 0
         const cy = rect ? rect.top + rect.height / 2 : 0
         const nextZoom = clampZoom(gesture.startZoom * (dist / gesture.startDist))
-        setZoom(nextZoom)
+        setZoomState(nextZoom)
         setPan(clampPan({
           x: midX - cx - gesture.contentPoint.x * nextZoom,
           y: midY - cy - gesture.contentPoint.y * nextZoom,
@@ -186,6 +193,10 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap }: UseZoomPanOption
     return () => el.removeEventListener('wheel', handleWheel)
   }, [zoomBy, clampPan])
 
+  useEffect(() => {
+    onZoomChange?.(zoom)
+  }, [zoom, onZoomChange])
+
   return {
     zoom,
     viewportRef,
@@ -197,6 +208,7 @@ export function useZoomPan({ minZoom = 1, maxZoom = 5, onTap }: UseZoomPanOption
     viewportProps: { onPointerDown, onDoubleClick },
     zoomIn: () => zoomBy(1.5),
     zoomOut: () => zoomBy(1 / 1.5),
+    setZoom: setZoomAbsolute,
     resetView,
     isZoomed: zoom > 1.001,
   }
