@@ -1,9 +1,11 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { Fragment, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import type { PlacedCamera } from '../types'
 import type { LoadedImage } from '../hooks/useImageLoader'
+import type { SunSettings } from '../utils/sunSettings'
 import { cameras } from '../data/cameras'
 import CameraShape from './CameraShape'
 import { useZoomPan } from '../hooks/useZoomPan'
+import { computeShadowParams } from '../utils/cameraShadow'
 
 const BASE_SCALE = 0.08
 
@@ -53,6 +55,7 @@ interface Props {
   selectedId: string | null
   armedCameraId: string | null
   workspaceH: string
+  sunSettings: SunSettings
   onCanvasClick: (xPct: number, yPct: number) => void
   onSelectCamera: (id: string) => void
   onMoveCamera: (id: string, xPct: number, yPct: number) => void
@@ -78,7 +81,7 @@ const DIRS = [
 ] as const
 
 const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
-  imageData, placedCameras, selectedId, armedCameraId,
+  imageData, placedCameras, selectedId, armedCameraId, sunSettings,
   workspaceH, onCanvasClick, onSelectCamera, onMoveCamera, onResizeCamera, onRotate, onZoomChange,
 }, ref) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -144,12 +147,41 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
             const orientationMode: NonNullable<import('../types').Camera['orientationMode']> =
               cam.images ? (cam.orientationMode ?? 'discrete') : 'free'
             const groupRotation = orientationMode === 'free' ? placed.rotation : 0
+            const shadow = computeShadowParams(ch, sunSettings.angleDeg, sunSettings.strength)
+            const shadowFilter = `brightness(0) blur(${shadow.blur}px)`
+            const mirrorTransform = orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined
 
             return (
-              <g
-                key={placed.id}
-                transform={`translate(${cx},${cy}) rotate(${groupRotation})`}
-              >
+              <Fragment key={placed.id}>
+                {/* Ombre portée : copie décalée dans l'espace du monde (pas dans le repère
+                    déjà pivoté), pour que sa direction reste fixe quel que soit l'angle de
+                    la caméra — seule la silhouette elle-même doit suivre la rotation. */}
+                <g
+                  transform={`translate(${cx + shadow.dx},${cy + shadow.dy}) rotate(${groupRotation})`}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {cam.images ? (
+                    <image
+                      href={orientationMode === 'discrete' ? pickImage(placed.rotation, cam.images) : cam.images.front}
+                      x={-cw / 2} y={-ch / 2}
+                      width={cw} height={ch}
+                      preserveAspectRatio="xMidYMid meet"
+                      transform={mirrorTransform}
+                      style={{ filter: shadowFilter, opacity: shadow.opacity }}
+                    />
+                  ) : (
+                    <foreignObject
+                      x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                      style={{ overflow: 'visible', filter: shadowFilter, opacity: shadow.opacity }}
+                    >
+                      <CameraShape type={cam.type} width={cw} height={ch} />
+                    </foreignObject>
+                  )}
+                </g>
+
+                <g
+                  transform={`translate(${cx},${cy}) rotate(${groupRotation})`}
+                >
                 {/* Zone de capture (drag / select) */}
                 <rect
                   x={-cw / 2} y={-ch / 2} width={cw} height={ch}
@@ -199,9 +231,9 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     x={-cw / 2} y={-ch / 2}
                     width={cw} height={ch}
                     preserveAspectRatio="xMidYMid meet"
-                    transform={orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined}
+                    transform={mirrorTransform}
                     style={{
-                      filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7)) drop-shadow(0 2px 8px rgba(0,0,0,0.65))',
+                      filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7))',
                       pointerEvents: 'none',
                     } as React.CSSProperties}
                   />
@@ -267,7 +299,8 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     }}
                   />
                 ))}
-              </g>
+                </g>
+              </Fragment>
             )
           })}
         </svg>

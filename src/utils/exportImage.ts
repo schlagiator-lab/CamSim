@@ -1,6 +1,8 @@
-import type { PlacedCamera } from '../types'
+import type { PlacedCamera, CameraType } from '../types'
 import type { LoadedImage } from '../hooks/useImageLoader'
+import type { SunSettings } from './sunSettings'
 import { cameras } from '../data/cameras'
+import { computeShadowParams } from './cameraShadow'
 
 const BASE_SCALE = 0.08
 
@@ -148,7 +150,32 @@ function drawPtz(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.fillStyle = '#020810'; ctx.fill()
 }
 
-export async function exportImage(imageData: LoadedImage, placedCameras: PlacedCamera[]) {
+/* Cache par (type, taille arrondie) de la caméra vectorielle déjà rendue dans un canvas
+   offscreen : évite de rejouer les dizaines d'appels de dessin par dégradé (drawDome &
+   co.) à chaque caméra placée, et donne une image plate à partir de laquelle dériver
+   une ombre propre en un seul filtre (voir drawCameraShadow ci-dessous) — recalculer
+   l'ombre forme par forme produirait un magma d'ombres qui se chevauchent. */
+const vectorShapeCache = new Map<string, HTMLCanvasElement>()
+
+function getVectorShapeCanvas(type: CameraType, w: number, h: number): HTMLCanvasElement {
+  const rw = Math.max(1, Math.round(w))
+  const rh = Math.max(1, Math.round(h))
+  const key = `${type}-${rw}x${rh}`
+  const cached = vectorShapeCache.get(key)
+  if (cached) return cached
+
+  const canvas = document.createElement('canvas')
+  canvas.width = rw
+  canvas.height = rh
+  const c = canvas.getContext('2d')!
+  if (type === 'dome' || type === 'fisheye') drawDome(c, rw, rh)
+  else if (type === 'bullet') drawBullet(c, rw, rh)
+  else if (type === 'ptz') drawPtz(c, rw, rh)
+  vectorShapeCache.set(key, canvas)
+  return canvas
+}
+
+export async function exportImage(imageData: LoadedImage, placedCameras: PlacedCamera[], sunSettings: SunSettings) {
   const { src, naturalWidth, naturalHeight } = imageData
   const canvas = document.createElement('canvas')
   canvas.width = naturalWidth
@@ -166,30 +193,45 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
     const py = placed.y / 100 * naturalHeight
     const cw = naturalWidth * BASE_SCALE * placed.scale
     const ch = cw * (cam.realHeight / cam.realWidth)
+    const orientationMode = cam.images ? (cam.orientationMode ?? 'discrete') : 'free'
+    const mirror = orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation)
+
+    const camImg = cam.images
+      ? await loadImage(orientationMode === 'discrete' ? pickImage(placed.rotation, cam.images) : cam.images.front)
+      : null
+
+    /* Dessine la caméra (photo ou silhouette vectorielle mise en cache) centrée sur
+       l'origine courante du canvas — appelé une fois pour l'ombre, une fois pour le
+       rendu réel, avec la même image source dans les deux cas. */
+    const drawVisual = () => {
+      if (camImg) {
+        ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
+      } else {
+        const shapeCanvas = getVectorShapeCanvas(cam.type, cw, ch)
+        ctx.drawImage(shapeCanvas, -cw / 2, -ch / 2, cw, ch)
+      }
+    }
+
+    const applyOrientation = () => {
+      if (orientationMode === 'free') ctx.rotate((placed.rotation * Math.PI) / 180)
+      else if (mirror) ctx.scale(-1, 1)
+    }
+
+    /* Ombre portée (dessinée en premier) : décalage fixe dans l'espace de la photo,
+       pour que sa direction ne dépende pas de la rotation propre de la caméra. */
+    const shadow = computeShadowParams(ch, sunSettings.angleDeg, sunSettings.strength)
+    ctx.save()
+    ctx.translate(px + shadow.dx, py + shadow.dy)
+    applyOrientation()
+    ctx.filter = `brightness(0) blur(${shadow.blur}px)`
+    ctx.globalAlpha = shadow.opacity
+    drawVisual()
+    ctx.restore()
 
     ctx.save()
     ctx.translate(px, py)
-
-    if (cam.images) {
-      const orientationMode = cam.orientationMode ?? 'discrete'
-      if (orientationMode === 'free') {
-        ctx.rotate((placed.rotation * Math.PI) / 180)
-        const camImg = await loadImage(cam.images.front)
-        ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
-      } else {
-        if (orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation)) ctx.scale(-1, 1)
-        const href = orientationMode === 'mirror' ? cam.images.front : pickImage(placed.rotation, cam.images)
-        const camImg = await loadImage(href)
-        ctx.drawImage(camImg, -cw / 2, -ch / 2, cw, ch)
-      }
-    } else {
-      ctx.rotate((placed.rotation * Math.PI) / 180)
-      ctx.translate(-cw / 2, -ch / 2)
-      if (cam.type === 'dome' || cam.type === 'fisheye') drawDome(ctx, cw, ch)
-      else if (cam.type === 'bullet') drawBullet(ctx, cw, ch)
-      else if (cam.type === 'ptz') drawPtz(ctx, cw, ch)
-    }
-
+    applyOrientation()
+    drawVisual()
     ctx.restore()
 
     if (placed.showLabel) {

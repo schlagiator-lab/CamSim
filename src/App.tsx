@@ -8,11 +8,14 @@ import {
   getActiveProjectId, setActiveProjectId, migrateLegacyProject,
 } from './utils/projectStore'
 import type { StoredProject } from './utils/projectStore'
+import { getSunSettings, setSunSettings } from './utils/sunSettings'
+import type { SunSettings } from './utils/sunSettings'
 import UploadZone from './components/UploadZone'
 import Workspace from './components/Workspace'
 import BottomBar, { getBarHeight } from './components/BottomBar'
 import DPad, { STEP as NUDGE_STEP } from './components/DPad'
 import ProjectsSheet from './components/ProjectsSheet'
+import SunSheet from './components/SunSheet'
 import type { BottomMode } from './components/BottomBar'
 import type { WorkspaceHandle } from './components/Workspace'
 
@@ -73,7 +76,14 @@ export default function App() {
   const [activeProject, setActiveProject] = useState<ActiveProjectMeta | null>(null)
   const [showProjects, setShowProjects] = useState(false)
   const [projects, setProjects] = useState<StoredProject[]>([])
+  const [sunSettings, setSunSettingsState] = useState<SunSettings>(() => getSunSettings())
+  const [showSun, setShowSun] = useState(false)
   const workspaceRef = useRef<WorkspaceHandle>(null)
+
+  const handleSunChange = (next: SunSettings) => {
+    setSunSettingsState(next)
+    setSunSettings(next)
+  }
 
   const handleImageZoomChange = useCallback((zoom: number) => {
     workspaceRef.current?.setZoom(zoom)
@@ -287,6 +297,7 @@ export default function App() {
 
       if (e.key === 'Escape') {
         if (showProjects) { setShowProjects(false); return }
+        if (showSun) { setShowSun(false); return }
         if (armedCameraId) { setArmedCameraId(null); return }
         if (showPanel) { setShowPanel(false); return }
         if (showEditList) { setShowEditList(false); return }
@@ -309,11 +320,11 @@ export default function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showProjects, armedCameraId, showPanel, showEditList, selectedId, handleNudge, handleDelete, handleDeselect])
+  }, [showProjects, showSun, armedCameraId, showPanel, showEditList, selectedId, handleNudge, handleDelete, handleDeselect])
 
   const handleExport = async () => {
     if (!imageData) return
-    await exportImage(imageData, placedCameras)
+    await exportImage(imageData, placedCameras, sunSettings)
   }
 
   const canExport = !!imageData && placedCameras.length > 0
@@ -333,7 +344,7 @@ export default function App() {
           CAMSIM
         </span>
         <button
-          onClick={() => setShowProjects(true)}
+          onClick={() => { setShowProjects(true); setShowSun(false) }}
           title="Mes projets"
           aria-label="Mes projets"
           style={{
@@ -347,6 +358,21 @@ export default function App() {
             cursor: 'pointer',
           }}
         >🗂</button>
+        <button
+          onClick={() => { setShowSun(true); setShowProjects(false) }}
+          title="Réglage du soleil"
+          aria-label="Réglage du soleil"
+          style={{
+            width: 26, height: 26,
+            background: 'rgba(13,13,15,0.82)',
+            border: '1px solid rgba(0,212,255,0.30)',
+            borderRadius: 6,
+            color: '#00d4ff',
+            fontSize: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >☀</button>
       </div>
 
       {/* ── No image: full-screen upload ── */}
@@ -374,6 +400,7 @@ export default function App() {
               placedCameras={placedCameras}
               selectedId={selectedId}
               armedCameraId={armedCameraId}
+              sunSettings={sunSettings}
               workspaceH={`calc(100dvh - ${barH}px)`}
               onCanvasClick={handleCanvasClick}
               onSelectCamera={setSelectedId}
@@ -437,6 +464,13 @@ export default function App() {
         onOpen={handleOpenProject}
         onDelete={handleDeleteProject}
         onRename={handleRenameProject}
+      />
+
+      <SunSheet
+        open={showSun}
+        settings={sunSettings}
+        onChange={handleSunChange}
+        onClose={() => setShowSun(false)}
       />
     </>
   )
