@@ -10,6 +10,7 @@ import { computeIntegrationParams } from '../utils/cameraIntegration'
 import { computeWallTransform } from '../utils/wallPerspective'
 
 const BASE_SCALE = 0.08
+const MIN_HIT_SIZE = 44 // px CSS non zoomés, recommandation Apple pour une cible tactile
 
 const ZOOM_BTN: React.CSSProperties = {
   width: 38,
@@ -160,6 +161,12 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
             const shadowFilterId = `shadow-${placed.id}`
             const realFilterId = `real-${placed.id}`
             const mirrorTransform = orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined
+            // Zone tactile (sélection/déplacement) au moins aussi grande que la recommandation
+            // Apple (44pt) : une petite caméra affichée à l'écran (zoom arrière, échelle faible)
+            // devient sinon très facile à "rater" du doigt, ce qui bascule le tap sur le fond
+            // et désélectionne au lieu d'interagir avec la caméra.
+            const hitW = Math.max(cw, MIN_HIT_SIZE)
+            const hitH = Math.max(ch, MIN_HIT_SIZE)
             const wallTransform = computeWallTransform(placed.wallTilt ?? 0)
             const skewTransform = wallTransform.cssSkewDeg !== 0 ? `skewX(${wallTransform.cssSkewDeg})` : undefined
             // Appliqué seulement au visuel (image/forme), pas au groupe entier : la
@@ -224,7 +231,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                 >
                 {/* Zone de capture (drag / select) */}
                 <rect
-                  x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                  x={-hitW / 2} y={-hitH / 2} width={hitW} height={hitH}
                   fill="transparent"
                   style={{ cursor: armedCameraId ? 'crosshair' : 'grab', pointerEvents: armedCameraId ? 'none' : 'auto' }}
                   onPointerDown={e => {
@@ -256,8 +263,8 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                 {/* Cadre de sélection */}
                 {isSelected && (
                   <rect
-                    x={-cw / 2 - 5} y={-ch / 2 - 5}
-                    width={cw + 10} height={ch + 10}
+                    x={-hitW / 2 - 5} y={-hitH / 2 - 5}
+                    width={hitW + 10} height={hitH + 10}
                     fill="none" stroke="#00d4ff" strokeWidth={1.5}
                     strokeDasharray="5,4" rx={4}
                     style={{ pointerEvents: 'none' }}
