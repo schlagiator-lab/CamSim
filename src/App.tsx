@@ -342,8 +342,9 @@ export default function App() {
     <>
       {imageError && <ErrorBanner message={imageError} onDismiss={clearImageError} />}
 
-      {/* Marque + accès au gestionnaire de projets : toujours visible, avec ou sans photo chargée */}
-      <div style={{ position: 'fixed', top: 12, left: 16, zIndex: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Marque + accès au gestionnaire de projets : toujours visible, avec ou sans photo chargée.
+          top tient compte de l'encoche/Dynamic Island (sinon inaccessible sous la barre de statut iOS). */}
+      <div style={{ position: 'fixed', top: 'max(12px, env(safe-area-inset-top, 0px))', left: 16, zIndex: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontFamily: 'Orbitron', color: 'rgba(0,212,255,0.30)', fontSize: 10, letterSpacing: 3, userSelect: 'none' }}>
           CAMSIM
         </span>
