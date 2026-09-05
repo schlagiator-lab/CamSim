@@ -6,7 +6,7 @@ import { cameras } from '../data/cameras'
 import CameraShape from './CameraShape'
 import { useZoomPan } from '../hooks/useZoomPan'
 import { computeShadowParams } from '../utils/cameraShadow'
-import { integrationFilterCss } from '../utils/cameraIntegration'
+import { computeIntegrationParams } from '../utils/cameraIntegration'
 import { computeWallTransform } from '../utils/wallPerspective'
 
 const BASE_SCALE = 0.08
@@ -150,8 +150,15 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
               cam.images ? (cam.orientationMode ?? 'discrete') : 'free'
             const groupRotation = orientationMode === 'free' ? placed.rotation : 0
             const shadow = computeShadowParams(ch, sunSettings.angleDeg, sunSettings.strength)
-            const shadowFilter = `brightness(0) blur(${shadow.blur}px)`
-            const integrationFilter = integrationFilterCss(ch)
+            const integration = computeIntegrationParams(ch)
+            // Filtres SVG natifs (feColorMatrix/feComponentTransfer/feGaussianBlur/feDropShadow)
+            // plutôt que le raccourci CSS `filter: brightness() saturate() blur()…` : Safari
+            // applique ce raccourci de façon peu fiable sur des <image>/<foreignObject> SVG
+            // (l'ombre se retrouvait affichée comme une simple copie non assombrie de la
+            // caméra sur iPhone). Un id de filtre par caméra placée, car le flou dépend de
+            // sa taille rendue (`ch`).
+            const shadowFilterId = `shadow-${placed.id}`
+            const realFilterId = `real-${placed.id}`
             const mirrorTransform = orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined
             const wallTransform = computeWallTransform(placed.wallTilt ?? 0)
             const skewTransform = wallTransform.cssSkewDeg !== 0 ? `skewX(${wallTransform.cssSkewDeg})` : undefined
@@ -162,6 +169,26 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
 
             return (
               <Fragment key={placed.id}>
+                <defs>
+                  {/* Silhouette noire floutée (≈ brightness(0) blur()) : RVB à 0, alpha inchangé */}
+                  <filter id={shadowFilterId} x="-60%" y="-60%" width="220%" height="220%">
+                    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" />
+                    <feGaussianBlur stdDeviation={shadow.blur} />
+                  </filter>
+                  {/* Intégration tonale (saturation/luminosité/flou léger) + halo blanc de
+                      lisibilité (≈ drop-shadow(0 0 6px rgba(255,255,255,0.7))) */}
+                  <filter id={realFilterId} x="-60%" y="-60%" width="220%" height="220%">
+                    <feColorMatrix type="saturate" values={String(integration.saturate)} result="sat" />
+                    <feComponentTransfer in="sat" result="bright">
+                      <feFuncR type="linear" slope={integration.brightness} />
+                      <feFuncG type="linear" slope={integration.brightness} />
+                      <feFuncB type="linear" slope={integration.brightness} />
+                    </feComponentTransfer>
+                    <feGaussianBlur in="bright" stdDeviation={integration.blur} result="softened" />
+                    <feDropShadow in="softened" dx="0" dy="0" stdDeviation="3" floodColor="#ffffff" floodOpacity="0.7" />
+                  </filter>
+                </defs>
+
                 {/* Ombre portée : copie décalée dans l'espace du monde (pas dans le repère
                     déjà pivoté), pour que sa direction reste fixe quel que soit l'angle de
                     la caméra — seule la silhouette elle-même doit suivre la rotation. */}
@@ -176,13 +203,16 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                       width={cw} height={ch}
                       preserveAspectRatio="xMidYMid meet"
                       transform={visualTransform}
-                      style={{ filter: shadowFilter, opacity: shadow.opacity }}
+                      filter={`url(#${shadowFilterId})`}
+                      opacity={shadow.opacity}
                     />
                   ) : (
                     <foreignObject
                       x={-cw / 2} y={-ch / 2} width={cw} height={ch}
                       transform={visualTransform}
-                      style={{ overflow: 'visible', filter: shadowFilter, opacity: shadow.opacity }}
+                      filter={`url(#${shadowFilterId})`}
+                      opacity={shadow.opacity}
+                      style={{ overflow: 'visible' }}
                     >
                       <CameraShape type={cam.type} width={cw} height={ch} />
                     </foreignObject>
@@ -242,16 +272,15 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     width={cw} height={ch}
                     preserveAspectRatio="xMidYMid meet"
                     transform={visualTransform}
-                    style={{
-                      filter: `${integrationFilter} drop-shadow(0 0 6px rgba(255,255,255,0.7))`,
-                      pointerEvents: 'none',
-                    } as React.CSSProperties}
+                    filter={`url(#${realFilterId})`}
+                    style={{ pointerEvents: 'none' } as React.CSSProperties}
                   />
                 ) : (
                   <foreignObject
                     x={-cw / 2} y={-ch / 2} width={cw} height={ch}
                     transform={visualTransform}
-                    style={{ overflow: 'visible', filter: integrationFilter, pointerEvents: 'none' }}
+                    filter={`url(#${realFilterId})`}
+                    style={{ overflow: 'visible', pointerEvents: 'none' }}
                   >
                     <CameraShape type={cam.type} width={cw} height={ch} />
                   </foreignObject>

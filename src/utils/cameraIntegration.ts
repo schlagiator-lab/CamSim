@@ -23,3 +23,21 @@ export function integrationFilterCss(ch: number, settings: IntegrationSettings =
   const blur = Math.max(0.1, ch * settings.blurFactor)
   return `saturate(${settings.saturate}) brightness(${settings.brightness}) blur(${blur}px)`
 }
+
+export interface IntegrationParams {
+  saturate: number
+  brightness: number
+  blur: number
+}
+
+/* Version « paramètres bruts » pour construire un filtre SVG natif (feColorMatrix /
+   feComponentTransfer / feGaussianBlur) plutôt que la chaîne CSS ci-dessus : Safari a
+   un support historiquement peu fiable du raccourci CSS `filter: saturate() blur()…`
+   appliqué à des éléments SVG (`<image>`/`<foreignObject>`), voir Workspace.tsx. */
+export function computeIntegrationParams(ch: number, settings: IntegrationSettings = DEFAULT_INTEGRATION): IntegrationParams {
+  return {
+    saturate: settings.saturate,
+    brightness: settings.brightness,
+    blur: Math.max(0.1, ch * settings.blurFactor),
+  }
+}
