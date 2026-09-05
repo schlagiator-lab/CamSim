@@ -8,7 +8,7 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 165
+  if (mode === 'cam-selected') return 205
   if (mode === 'idle') return 66
   return 60 // armed
 }
@@ -32,6 +32,7 @@ interface Props {
   onUpdateLabel: (id: string, label: string) => void
   onToggleLabel: (id: string) => void
   onUpdateLabelColor: (id: string, color: string) => void
+  onUpdateWallTilt: (id: string, tilt: number) => void
   onExport: () => void
   imageZoom: number
   onImageZoomChange: (zoom: number) => void
@@ -79,7 +80,7 @@ export default function BottomBar({
   mode, placedCameras, selectedCamera, canExport,
   onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
   onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
-  onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onUpdateLabelColor, onExport,
+  onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onUpdateLabelColor, onUpdateWallTilt, onExport,
   imageZoom, onImageZoomChange,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
@@ -349,6 +350,21 @@ export default function BottomBar({
           <div style={{ textAlign: 'center', fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9, marginTop: 3 }}>
             {Math.round(imageZoom * 100)}%
           </div>
+        </div>
+
+        {/* Inclinaison du mur : cisaillement 2D approximant un pan de mur qui s'éloigne
+            du point de vue (MVP — voir src/utils/wallPerspective.ts) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontFamily: 'Orbitron', color: '#383848', fontSize: 7.5, letterSpacing: 1, flexShrink: 0 }}>MUR</span>
+          <input
+            type="range" min={-45} max={45} step={1}
+            value={selectedCamera.wallTilt ?? 0}
+            onChange={e => onUpdateWallTilt(selectedCamera.id, parseInt(e.target.value, 10))}
+            style={{ flex: 1, accentColor: '#00d4ff', margin: 0 }}
+          />
+          <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9, width: 30, textAlign: 'right', flexShrink: 0 }}>
+            {selectedCamera.wallTilt ?? 0}°
+          </span>
         </div>
 
         {/* Actions */}

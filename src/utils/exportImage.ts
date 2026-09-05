@@ -4,6 +4,7 @@ import type { SunSettings } from './sunSettings'
 import { cameras } from '../data/cameras'
 import { computeShadowParams } from './cameraShadow'
 import { integrationFilterCss } from './cameraIntegration'
+import { computeWallTransform } from './wallPerspective'
 
 const BASE_SCALE = 0.08
 
@@ -213,9 +214,12 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
       }
     }
 
+    const wallTransform = computeWallTransform(placed.wallTilt ?? 0)
+
     const applyOrientation = () => {
       if (orientationMode === 'free') ctx.rotate((placed.rotation * Math.PI) / 180)
       else if (mirror) ctx.scale(-1, 1)
+      if (wallTransform.canvasShearC !== 0) ctx.transform(1, 0, wallTransform.canvasShearC, 1, 0, 0)
     }
 
     /* Ombre portée (dessinée en premier) : décalage fixe dans l'espace de la photo,

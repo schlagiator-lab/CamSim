@@ -7,6 +7,7 @@ import CameraShape from './CameraShape'
 import { useZoomPan } from '../hooks/useZoomPan'
 import { computeShadowParams } from '../utils/cameraShadow'
 import { integrationFilterCss } from '../utils/cameraIntegration'
+import { computeWallTransform } from '../utils/wallPerspective'
 
 const BASE_SCALE = 0.08
 
@@ -152,6 +153,12 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
             const shadowFilter = `brightness(0) blur(${shadow.blur}px)`
             const integrationFilter = integrationFilterCss(ch)
             const mirrorTransform = orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined
+            const wallTransform = computeWallTransform(placed.wallTilt ?? 0)
+            const skewTransform = wallTransform.cssSkewDeg !== 0 ? `skewX(${wallTransform.cssSkewDeg})` : undefined
+            // Appliqué seulement au visuel (image/forme), pas au groupe entier : la
+            // zone de capture, le cadre de sélection et les poignées restent des
+            // rectangles simples, sans complexifier le hit-testing/redimensionnement.
+            const visualTransform = [mirrorTransform, skewTransform].filter(Boolean).join(' ') || undefined
 
             return (
               <Fragment key={placed.id}>
@@ -168,12 +175,13 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                       x={-cw / 2} y={-ch / 2}
                       width={cw} height={ch}
                       preserveAspectRatio="xMidYMid meet"
-                      transform={mirrorTransform}
+                      transform={visualTransform}
                       style={{ filter: shadowFilter, opacity: shadow.opacity }}
                     />
                   ) : (
                     <foreignObject
                       x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                      transform={visualTransform}
                       style={{ overflow: 'visible', filter: shadowFilter, opacity: shadow.opacity }}
                     >
                       <CameraShape type={cam.type} width={cw} height={ch} />
@@ -233,7 +241,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     x={-cw / 2} y={-ch / 2}
                     width={cw} height={ch}
                     preserveAspectRatio="xMidYMid meet"
-                    transform={mirrorTransform}
+                    transform={visualTransform}
                     style={{
                       filter: `${integrationFilter} drop-shadow(0 0 6px rgba(255,255,255,0.7))`,
                       pointerEvents: 'none',
@@ -242,6 +250,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                 ) : (
                   <foreignObject
                     x={-cw / 2} y={-ch / 2} width={cw} height={ch}
+                    transform={visualTransform}
                     style={{ overflow: 'visible', filter: integrationFilter, pointerEvents: 'none' }}
                   >
                     <CameraShape type={cam.type} width={cw} height={ch} />

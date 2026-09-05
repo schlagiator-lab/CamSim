@@ -65,7 +65,7 @@ export default function App() {
   const {
     placedCameras, selectedId, setSelectedId,
     placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera,
-    updateLabel, toggleLabel, updateLabelColor, restorePlacedCameras,
+    updateLabel, toggleLabel, updateLabelColor, updateWallTilt, restorePlacedCameras,
   } = usePlacement()
 
   const [armedCameraId, setArmedCameraId] = useState<string | null>(null)
@@ -447,6 +447,7 @@ export default function App() {
               onUpdateLabel={updateLabel}
               onToggleLabel={toggleLabel}
               onUpdateLabelColor={updateLabelColor}
+              onUpdateWallTilt={updateWallTilt}
               onExport={handleExport}
               imageZoom={imageZoom}
               onImageZoomChange={handleImageZoomChange}

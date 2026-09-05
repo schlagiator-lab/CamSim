@@ -35,4 +35,8 @@ export interface PlacedCamera {
   label: string
   showLabel: boolean
   labelColor?: string
+  /* Inclinaison du mur (degrés, -60..60, 0 = aucune) : cisaillement 2D approximant
+     une caméra posée sur un pan de mur qui s'éloigne du point de vue. Optionnel pour
+     rester compatible avec les projets sauvegardés avant l'ajout de ce réglage. */
+  wallTilt?: number
 }

@@ -7,7 +7,7 @@ export function usePlacement() {
 
   const placeCamera = useCallback((cameraId: string, xPct: number, yPct: number) => {
     const id = `placed-${Date.now()}`
-    setPlacedCameras(prev => [...prev, { id, cameraId, x: xPct, y: yPct, rotation: 0, scale: 1.0, label: '', showLabel: true, labelColor: '#00d4ff' }])
+    setPlacedCameras(prev => [...prev, { id, cameraId, x: xPct, y: yPct, rotation: 0, scale: 1.0, label: '', showLabel: true, labelColor: '#00d4ff', wallTilt: 0 }])
     setSelectedId(id)
   }, [])
 
@@ -53,9 +53,13 @@ export function usePlacement() {
     setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, labelColor } : c))
   }, [])
 
+  const updateWallTilt = useCallback((id: string, wallTilt: number) => {
+    setPlacedCameras(prev => prev.map(c => c.id === id ? { ...c, wallTilt } : c))
+  }, [])
+
   const restorePlacedCameras = useCallback((cams: PlacedCamera[]) => {
     setPlacedCameras(cams)
   }, [])
 
-  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera, updateLabel, toggleLabel, updateLabelColor, restorePlacedCameras }
+  return { placedCameras, selectedId, setSelectedId, placeCamera, moveCamera, rotateCamera, resizeCamera, deleteCamera, duplicateCamera, updateLabel, toggleLabel, updateLabelColor, updateWallTilt, restorePlacedCameras }
 }
