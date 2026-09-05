@@ -3,6 +3,7 @@ import type { LoadedImage } from '../hooks/useImageLoader'
 import type { SunSettings } from './sunSettings'
 import { cameras } from '../data/cameras'
 import { computeShadowParams } from './cameraShadow'
+import { integrationFilterCss } from './cameraIntegration'
 
 const BASE_SCALE = 0.08
 
@@ -231,6 +232,7 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
     ctx.save()
     ctx.translate(px, py)
     applyOrientation()
+    ctx.filter = integrationFilterCss(ch)
     drawVisual()
     ctx.restore()
 

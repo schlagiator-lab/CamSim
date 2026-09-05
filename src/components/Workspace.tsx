@@ -6,6 +6,7 @@ import { cameras } from '../data/cameras'
 import CameraShape from './CameraShape'
 import { useZoomPan } from '../hooks/useZoomPan'
 import { computeShadowParams } from '../utils/cameraShadow'
+import { integrationFilterCss } from '../utils/cameraIntegration'
 
 const BASE_SCALE = 0.08
 
@@ -149,6 +150,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
             const groupRotation = orientationMode === 'free' ? placed.rotation : 0
             const shadow = computeShadowParams(ch, sunSettings.angleDeg, sunSettings.strength)
             const shadowFilter = `brightness(0) blur(${shadow.blur}px)`
+            const integrationFilter = integrationFilterCss(ch)
             const mirrorTransform = orientationMode === 'mirror' && shouldMirror(cam.frontFacing, placed.rotation) ? 'scale(-1,1)' : undefined
 
             return (
@@ -233,14 +235,14 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     preserveAspectRatio="xMidYMid meet"
                     transform={mirrorTransform}
                     style={{
-                      filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7))',
+                      filter: `${integrationFilter} drop-shadow(0 0 6px rgba(255,255,255,0.7))`,
                       pointerEvents: 'none',
                     } as React.CSSProperties}
                   />
                 ) : (
                   <foreignObject
                     x={-cw / 2} y={-ch / 2} width={cw} height={ch}
-                    style={{ overflow: 'visible', pointerEvents: 'none' }}
+                    style={{ overflow: 'visible', filter: integrationFilter, pointerEvents: 'none' }}
                   >
                     <CameraShape type={cam.type} width={cw} height={ch} />
                   </foreignObject>
