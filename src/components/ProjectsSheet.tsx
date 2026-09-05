@@ -110,8 +110,8 @@ export default function ProjectsSheet({ open, projects, activeProjectId, onClose
             height: THUMB_H + 46,
           }}
         >
-          <span style={{ fontSize: 20, color: '#00d4ff', fontWeight: 300, lineHeight: 1 }}>+</span>
-          <span style={{ fontFamily: 'Orbitron', color: '#00d4ff', fontSize: 8, letterSpacing: 1 }}>NOUVEAU</span>
+          <span style={{ fontSize: 20, color: '#bf393a', fontWeight: 300, lineHeight: 1 }}>+</span>
+          <span style={{ fontFamily: 'Orbitron', color: '#bf393a', fontSize: 8, letterSpacing: 1 }}>NOUVEAU</span>
         </button>
         <input
           ref={fileInputRef}
@@ -133,7 +133,7 @@ export default function ProjectsSheet({ open, projects, activeProjectId, onClose
               style={{
                 flexShrink: 0, width: CARD_W,
                 background: '#0f0f14',
-                border: `1px solid ${active ? '#00d4ff' : '#222232'}`,
+                border: `1px solid ${active ? '#bf393a' : '#222232'}`,
                 borderRadius: 8,
                 padding: 6,
                 cursor: 'pointer',
@@ -157,13 +157,13 @@ export default function ProjectsSheet({ open, projects, activeProjectId, onClose
                   onBlur={commitEdit}
                   onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null) }}
                   style={{
-                    width: '100%', background: '#14141c', border: '1px solid #00d4ff', borderRadius: 4,
+                    width: '100%', background: '#14141c', border: '1px solid #bf393a', borderRadius: 4,
                     color: '#ccc', fontFamily: 'DM Mono', fontSize: 9, padding: '3px 5px', outline: 'none',
                   }}
                 />
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ flex: 1, minWidth: 0, fontFamily: 'DM Mono', color: active ? '#00d4ff' : '#ccc', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{ flex: 1, minWidth: 0, fontFamily: 'DM Mono', color: active ? '#bf393a' : '#ccc', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {p.name}
                   </span>
                   <button

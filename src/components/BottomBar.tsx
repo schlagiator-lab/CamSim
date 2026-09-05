@@ -61,10 +61,10 @@ const btn = (color: string): React.CSSProperties => ({
 })
 
 const exportBtn: React.CSSProperties = {
-  background: '#00d4ff',
+  background: '#bf393a',
   border: 'none',
   borderRadius: 6,
-  color: '#000',
+  color: '#fff',
   fontFamily: 'Orbitron',
   fontSize: 9,
   padding: '5px 10px',
@@ -111,10 +111,10 @@ export default function BottomBar({
     const tabStyle = (active: boolean, disabled: boolean): React.CSSProperties => ({
       flex: 1,
       height: 48,
-      background: active ? 'rgba(0,212,255,0.10)' : disabled ? 'transparent' : 'rgba(0,212,255,0.04)',
-      border: `1px solid ${active ? '#00d4ff' : disabled ? 'rgba(0,212,255,0.10)' : 'rgba(0,212,255,0.28)'}`,
+      background: active ? 'rgba(191,57,58,0.10)' : disabled ? 'transparent' : 'rgba(191,57,58,0.04)',
+      border: `1px solid ${active ? '#bf393a' : disabled ? 'rgba(191,57,58,0.10)' : 'rgba(191,57,58,0.28)'}`,
       borderRadius: 8,
-      color: disabled ? 'rgba(0,212,255,0.22)' : '#00d4ff',
+      color: disabled ? 'rgba(191,57,58,0.22)' : '#bf393a',
       fontFamily: 'Orbitron',
       cursor: disabled ? 'not-allowed' : 'pointer',
       display: 'flex',
@@ -130,8 +130,8 @@ export default function BottomBar({
         <button
           onClick={onOpenPanel}
           style={tabStyle(false, false)}
-          onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.14)' }}
-          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(0,212,255,0.28)'; t.style.background = 'rgba(0,212,255,0.04)' }}
+          onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
+          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
         >
           <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 300 }}>+</span>
           <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>AJOUTER UNE CAMÉRA</span>
@@ -139,8 +139,8 @@ export default function BottomBar({
         <button
           onClick={hasCameras ? onOpenEditList : undefined}
           style={tabStyle(false, !hasCameras)}
-          onMouseEnter={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.14)' }}
-          onMouseLeave={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = 'rgba(0,212,255,0.28)'; t.style.background = 'rgba(0,212,255,0.04)' }}
+          onMouseEnter={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
+          onMouseLeave={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
         >
           <span style={{ fontSize: 15, lineHeight: 1 }}>✎</span>
           <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MODIFIER UNE CAMÉRA</span>
@@ -181,7 +181,7 @@ export default function BottomBar({
                   padding: '7px 5px 6px', cursor: 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 }}
-                onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.06)' }}
+                onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.06)' }}
                 onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#222232'; t.style.background = '#0f0f14' }}
               >
                 <div style={{ height: 54, width: 80, borderRadius: 4, background: cam.images ? '#f0f0f0' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -204,7 +204,7 @@ export default function BottomBar({
   if (mode === 'armed') {
     return (
       <div style={{ ...base, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', gap: 16 }}>
-        <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 10, letterSpacing: 1 }}>
+        <span style={{ fontFamily: 'DM Mono', color: '#bf393a', fontSize: 10, letterSpacing: 1 }}>
           → Cliquez sur la photo pour placer la caméra
         </span>
         <button onClick={onCancelArmed} style={btn('#444')}>ANNULER</button>
@@ -241,7 +241,7 @@ export default function BottomBar({
                   padding: '7px 5px 6px', cursor: 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                 }}
-                onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#00d4ff'; t.style.background = 'rgba(0,212,255,0.06)' }}
+                onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.06)' }}
                 onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = '#222232'; t.style.background = '#0f0f14' }}
               >
                 <div style={{ height: 50, width: 80, borderRadius: 4, background: cam.images ? '#f0f0f0' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -291,7 +291,7 @@ export default function BottomBar({
           <input
             type="color"
             className="label-color-swatch"
-            value={selectedCamera.labelColor ?? '#00d4ff'}
+            value={selectedCamera.labelColor ?? '#bf393a'}
             onChange={e => onUpdateLabelColor(selectedCamera.id, e.target.value)}
             onClick={e => e.stopPropagation()}
             title="Couleur de l'étiquette"
@@ -309,10 +309,10 @@ export default function BottomBar({
             title={selectedCamera.showLabel ? "Masquer l'étiquette" : "Afficher l'étiquette"}
             style={{
               flexShrink: 0,
-              background: selectedCamera.showLabel ? 'rgba(0,212,255,0.10)' : 'transparent',
-              border: `1px solid ${selectedCamera.showLabel ? 'rgba(0,212,255,0.4)' : '#333'}`,
+              background: selectedCamera.showLabel ? 'rgba(191,57,58,0.10)' : 'transparent',
+              border: `1px solid ${selectedCamera.showLabel ? 'rgba(191,57,58,0.4)' : '#333'}`,
               borderRadius: 4,
-              color: selectedCamera.showLabel ? '#00d4ff' : '#444',
+              color: selectedCamera.showLabel ? '#bf393a' : '#444',
               fontFamily: 'Orbitron',
               fontSize: 7.5,
               letterSpacing: 1,
@@ -334,20 +334,20 @@ export default function BottomBar({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => onImageZoomChange(clampImageZoom(Math.round((imageZoom - 0.1) * 100) / 100))}
-              style={{ ...btn('#00d4ff'), flexShrink: 0, padding: '5px 9px' }}
+              style={{ ...btn('#bf393a'), flexShrink: 0, padding: '5px 9px' }}
             >−</button>
             <input
               type="range" min={50} max={300} step={1}
               value={Math.round(imageZoom * 100)}
               onChange={e => onImageZoomChange(parseInt(e.target.value, 10) / 100)}
-              style={{ flex: 1, accentColor: '#00d4ff', margin: 0 }}
+              style={{ flex: 1, accentColor: '#bf393a', margin: 0 }}
             />
             <button
               onClick={() => onImageZoomChange(clampImageZoom(Math.round((imageZoom + 0.1) * 100) / 100))}
-              style={{ ...btn('#00d4ff'), flexShrink: 0, padding: '5px 9px' }}
+              style={{ ...btn('#bf393a'), flexShrink: 0, padding: '5px 9px' }}
             >+</button>
           </div>
-          <div style={{ textAlign: 'center', fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9, marginTop: 3 }}>
+          <div style={{ textAlign: 'center', fontFamily: 'DM Mono', color: '#bf393a', fontSize: 9, marginTop: 3 }}>
             {Math.round(imageZoom * 100)}%
           </div>
         </div>
@@ -360,17 +360,17 @@ export default function BottomBar({
             type="range" min={-45} max={45} step={1}
             value={selectedCamera.wallTilt ?? 0}
             onChange={e => onUpdateWallTilt(selectedCamera.id, parseInt(e.target.value, 10))}
-            style={{ flex: 1, accentColor: '#00d4ff', margin: 0 }}
+            style={{ flex: 1, accentColor: '#bf393a', margin: 0 }}
           />
-          <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9, width: 30, textAlign: 'right', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'DM Mono', color: '#bf393a', fontSize: 9, width: 30, textAlign: 'right', flexShrink: 0 }}>
             {selectedCamera.wallTilt ?? 0}°
           </span>
         </div>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button style={{ ...btn('#00d4ff'), flex: 1 }} onClick={onOpenPanel}>+ AJOUTER</button>
-          <button style={{ ...btn('#00d4ff'), flex: 1 }} onClick={() => onDuplicate(selectedCamera.id)}>⧉ DUPLIQUER</button>
+          <button style={{ ...btn('#bf393a'), flex: 1 }} onClick={onOpenPanel}>+ AJOUTER</button>
+          <button style={{ ...btn('#bf393a'), flex: 1 }} onClick={() => onDuplicate(selectedCamera.id)}>⧉ DUPLIQUER</button>
           <button style={{ ...btn('#555'), flex: 1 }} onClick={onDeselect}>← RETOUR</button>
           <button style={{ ...btn(confirmDelete ? '#ff6a6a' : '#ff3333'), flex: 1 }} onClick={handleDeleteClick}>
             {confirmDelete ? 'CONFIRMER ?' : 'SUPPRIMER'}

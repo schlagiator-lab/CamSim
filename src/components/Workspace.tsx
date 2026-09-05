@@ -16,9 +16,9 @@ const ZOOM_BTN: React.CSSProperties = {
   width: 38,
   height: 38,
   background: 'rgba(13,13,15,0.82)',
-  border: '1px solid rgba(0,212,255,0.30)',
+  border: '1px solid rgba(191,57,58,0.30)',
   borderRadius: 7,
-  color: '#00d4ff',
+  color: '#bf393a',
   fontSize: 17,
   display: 'flex',
   alignItems: 'center',
@@ -265,7 +265,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                   <rect
                     x={-hitW / 2 - 5} y={-hitH / 2 - 5}
                     width={hitW + 10} height={hitH + 10}
-                    fill="none" stroke="#00d4ff" strokeWidth={1.5}
+                    fill="none" stroke="#bf393a" strokeWidth={1.5}
                     strokeDasharray="5,4" rx={4}
                     style={{ pointerEvents: 'none' }}
                   />
@@ -299,7 +299,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                     x={0} y={ch / 2 + 14}
                     textAnchor="middle" fontFamily="DM Mono"
                     fontSize={Math.max(8, Math.min(13, cw * 0.12))}
-                    fill={placed.labelColor ?? '#00d4ff'}
+                    fill={placed.labelColor ?? '#bf393a'}
                     style={{ pointerEvents: 'none', userSelect: 'none' }}
                   >
                     {displayLabel}
@@ -311,7 +311,7 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                   <circle
                     key={i}
                     cx={sx * (cw / 2 + 5)} cy={sy * (ch / 2 + 5)}
-                    r={5} fill="#00d4ff" stroke="#0d0d0f" strokeWidth={1.5}
+                    r={5} fill="#bf393a" stroke="#0d0d0f" strokeWidth={1.5}
                     style={{ cursor: 'nwse-resize' }}
                     onPointerDown={e => {
                       e.stopPropagation()
@@ -409,8 +409,8 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
                 style={{
                   ...ZOOM_BTN,
                   width: COMPASS_CELL, height: COMPASS_CELL, fontSize: 15,
-                  background: active ? 'rgba(0,212,255,0.28)' : ZOOM_BTN.background,
-                  border: active ? '1px solid #00d4ff' : ZOOM_BTN.border,
+                  background: active ? 'rgba(191,57,58,0.28)' : ZOOM_BTN.background,
+                  border: active ? '1px solid #bf393a' : ZOOM_BTN.border,
                 }}
               >{d.a}</button>
             )

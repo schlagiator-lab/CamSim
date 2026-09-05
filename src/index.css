@@ -16,7 +16,7 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #0f0f14; }
 ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #00d4ff44; }
+::-webkit-scrollbar-thumb:hover { background: #bf393a44; }
 
 .label-color-swatch {
   -webkit-appearance: none;

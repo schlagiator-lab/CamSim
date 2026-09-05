@@ -14,9 +14,9 @@ const BTN_STYLE: React.CSSProperties = {
   width: BTN_SIZE,
   height: BTN_SIZE,
   background: 'rgba(13,13,15,0.82)',
-  border: '1px solid rgba(0,212,255,0.30)',
+  border: '1px solid rgba(191,57,58,0.30)',
   borderRadius: 7,
-  color: '#00d4ff',
+  color: '#bf393a',
   fontSize: 16,
   display: 'flex',
   alignItems: 'center',
@@ -61,12 +61,12 @@ export default function DPad({ onNudge }: Props) {
     <div style={{ position: 'relative', width: size, height: size }}>
       {/* Up */}
       {btn(0, -STEP,
-        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M5 1 L9 9 L1 9 Z" fill="#00d4ff"/></svg>,
+        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M5 1 L9 9 L1 9 Z" fill="#bf393a"/></svg>,
         { top: 0, left: BTN_SIZE + 2 }
       )}
       {/* Left */}
       {btn(-STEP, 0,
-        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M1 5 L9 1 L9 9 Z" fill="#00d4ff"/></svg>,
+        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M1 5 L9 1 L9 9 Z" fill="#bf393a"/></svg>,
         { top: BTN_SIZE + 2, left: 0 }
       )}
       {/* Center (inert) */}
@@ -75,20 +75,20 @@ export default function DPad({ onNudge }: Props) {
         top: BTN_SIZE + 2, left: BTN_SIZE + 2,
         width: BTN_SIZE, height: BTN_SIZE,
         background: 'rgba(13,13,15,0.60)',
-        border: '1px solid rgba(0,212,255,0.12)',
+        border: '1px solid rgba(191,57,58,0.12)',
         borderRadius: 7,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(0,212,255,0.25)' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(191,57,58,0.25)' }} />
       </div>
       {/* Right */}
       {btn(STEP, 0,
-        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M9 5 L1 9 L1 1 Z" fill="#00d4ff"/></svg>,
+        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M9 5 L1 9 L1 1 Z" fill="#bf393a"/></svg>,
         { top: BTN_SIZE + 2, left: (BTN_SIZE + 2) * 2 }
       )}
       {/* Down */}
       {btn(0, STEP,
-        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M5 9 L1 1 L9 1 Z" fill="#00d4ff"/></svg>,
+        <svg width={14} height={14} viewBox="0 0 10 10"><path d="M5 9 L1 1 L9 1 Z" fill="#bf393a"/></svg>,
         { top: (BTN_SIZE + 2) * 2, left: BTN_SIZE + 2 }
       )}
     </div>

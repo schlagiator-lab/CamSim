@@ -243,7 +243,7 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
     if (placed.showLabel) {
       ctx.save()
       ctx.translate(px, py + ch / 2 + 16)
-      ctx.fillStyle = placed.labelColor ?? '#00d4ff'
+      ctx.fillStyle = placed.labelColor ?? '#bf393a'
       ctx.font = `${Math.max(12, Math.min(22, cw * 0.10))}px "DM Mono", monospace`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'

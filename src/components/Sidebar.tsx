@@ -62,8 +62,8 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
               key={cam.id}
               onClick={() => onArmCamera(armed ? null : cam.id)}
               style={{
-                background: armed ? 'rgba(0,212,255,0.09)' : '#141418',
-                border: `1px solid ${armed ? '#00d4ff' : '#222230'}`,
+                background: armed ? 'rgba(191,57,58,0.09)' : '#141418',
+                border: `1px solid ${armed ? '#bf393a' : '#222230'}`,
                 borderRadius: 7,
                 padding: '7px 10px',
                 display: 'flex',
@@ -79,10 +79,10 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
                 <CameraShape type={cam.type} width={pw2} height={ph2} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: 'DM Mono', color: armed ? '#00d4ff' : '#d0d0d0', fontSize: 10, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontFamily: 'DM Mono', color: armed ? '#bf393a' : '#d0d0d0', fontSize: 10, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {cam.brand}
                 </div>
-                <div style={{ fontFamily: 'DM Mono', color: armed ? '#00d4ff88' : '#666', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontFamily: 'DM Mono', color: armed ? '#bf393a88' : '#666', fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {cam.model}
                 </div>
               </div>
@@ -93,7 +93,7 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
 
       {armedCameraId && (
         <div style={{ padding: '4px 12px 6px', textAlign: 'center' }}>
-          <span style={{ fontFamily: 'DM Mono', color: '#00d4ff', fontSize: 9, letterSpacing: 1 }}>
+          <span style={{ fontFamily: 'DM Mono', color: '#bf393a', fontSize: 9, letterSpacing: 1 }}>
             Cliquez sur la photo pour placer
           </span>
         </div>
@@ -103,7 +103,7 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
 
       {selectedCamera && selCam ? (
         <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontFamily: 'Orbitron', fontSize: 9, letterSpacing: 2, color: '#00d4ff' }}>SÉLECTION</div>
+          <div style={{ fontFamily: 'Orbitron', fontSize: 9, letterSpacing: 2, color: '#bf393a' }}>SÉLECTION</div>
 
           <div>
             <div style={{ fontFamily: 'DM Mono', color: '#e0e0e0', fontSize: 10, fontWeight: 500 }}>{selCam.brand}</div>
@@ -114,14 +114,14 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
           <div>
             <div style={{ fontFamily: 'DM Mono', color: '#555', fontSize: 9, marginBottom: 5, display: 'flex', justifyContent: 'space-between' }}>
               <span>TAILLE</span>
-              <span style={{ color: '#00d4ff' }}>{selectedCamera.scale.toFixed(2)}×</span>
+              <span style={{ color: '#bf393a' }}>{selectedCamera.scale.toFixed(2)}×</span>
             </div>
             <input
               type="range"
               min={0.2} max={3} step={0.05}
               value={selectedCamera.scale}
               onChange={e => onResize(selectedCamera.id, parseFloat(e.target.value))}
-              style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+              style={{ width: '100%', accentColor: '#bf393a', margin: 0 }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'DM Mono', fontSize: 8, color: '#444', marginTop: 2 }}>
               <span>0.2×</span>
@@ -147,10 +147,10 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
                     key={i}
                     onClick={() => onRotate(selectedCamera.id, d.deg as number)}
                     style={{
-                      background: active ? 'rgba(0,212,255,0.15)' : '#191921',
-                      border: `1px solid ${active ? '#00d4ff' : '#2a2a3a'}`,
+                      background: active ? 'rgba(191,57,58,0.15)' : '#191921',
+                      border: `1px solid ${active ? '#bf393a' : '#2a2a3a'}`,
                       borderRadius: 4,
-                      color: active ? '#00d4ff' : '#666',
+                      color: active ? '#bf393a' : '#666',
                       fontSize: 14,
                       height: 28,
                       cursor: 'pointer',
@@ -172,7 +172,7 @@ export default function Sidebar({ armedCameraId, onArmCamera, selectedCamera, on
               min={-180} max={180}
               value={selectedCamera.rotation}
               onChange={e => onRotate(selectedCamera.id, parseInt(e.target.value))}
-              style={{ width: '100%', accentColor: '#00d4ff', marginTop: 6 }}
+              style={{ width: '100%', accentColor: '#bf393a', marginTop: 6 }}
             />
           </div>
 

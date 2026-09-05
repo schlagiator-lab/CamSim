@@ -42,7 +42,7 @@ export default function SunSheet({ open, settings, onChange, onClose }: Props) {
             type="range" min={0} max={359} step={1}
             value={settings.angleDeg}
             onChange={e => onChange({ ...settings, angleDeg: parseInt(e.target.value, 10) })}
-            style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+            style={{ width: '100%', accentColor: '#bf393a', margin: 0 }}
           />
         </div>
         <div>
@@ -51,7 +51,7 @@ export default function SunSheet({ open, settings, onChange, onClose }: Props) {
             type="range" min={0} max={100} step={1}
             value={Math.round(settings.strength * 100)}
             onChange={e => onChange({ ...settings, strength: parseInt(e.target.value, 10) / 100 })}
-            style={{ width: '100%', accentColor: '#00d4ff', margin: 0 }}
+            style={{ width: '100%', accentColor: '#bf393a', margin: 0 }}
           />
         </div>
       </div>

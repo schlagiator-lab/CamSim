@@ -345,9 +345,14 @@ export default function App() {
       {/* Marque + accès au gestionnaire de projets : toujours visible, avec ou sans photo chargée.
           top tient compte de l'encoche/Dynamic Island (sinon inaccessible sous la barre de statut iOS). */}
       <div style={{ position: 'fixed', top: 'max(12px, env(safe-area-inset-top, 0px))', left: 16, zIndex: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontFamily: 'Orbitron', color: 'rgba(0,212,255,0.30)', fontSize: 10, letterSpacing: 3, userSelect: 'none' }}>
-          CAMSIM
-        </span>
+        {/* Logo à la place du texte "CAMSIM" : élément d'UI uniquement, jamais dessiné dans
+            l'export (exportImage.ts ne peint que la photo + les caméras placées). */}
+        <img
+          src={`${import.meta.env.BASE_URL}CamSimLogo.png?v=4`}
+          alt="CamSim"
+          draggable={false}
+          style={{ height: 26, width: 26, borderRadius: 6, userSelect: 'none', opacity: 0.92 }}
+        />
         <button
           onClick={() => { setShowProjects(true); setShowSun(false) }}
           title="Mes projets"
@@ -355,9 +360,9 @@ export default function App() {
           style={{
             width: 26, height: 26,
             background: 'rgba(13,13,15,0.82)',
-            border: '1px solid rgba(0,212,255,0.30)',
+            border: '1px solid rgba(191,57,58,0.30)',
             borderRadius: 6,
-            color: '#00d4ff',
+            color: '#bf393a',
             fontSize: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
@@ -370,9 +375,9 @@ export default function App() {
           style={{
             width: 26, height: 26,
             background: 'rgba(13,13,15,0.82)',
-            border: '1px solid rgba(0,212,255,0.30)',
+            border: '1px solid rgba(191,57,58,0.30)',
             borderRadius: 6,
-            color: '#00d4ff',
+            color: '#bf393a',
             fontSize: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
@@ -383,7 +388,7 @@ export default function App() {
       {/* ── No image: full-screen upload ── */}
       {!imageData ? (
         <div style={{ width: '100dvw', height: '100dvh', background: '#0d0d0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
-          <div style={{ fontFamily: 'Orbitron', fontSize: 26, color: '#00d4ff', letterSpacing: 5 }}>CAMSIM</div>
+          <div style={{ fontFamily: 'Orbitron', fontSize: 26, color: '#bf393a', letterSpacing: 5 }}>CAMSIM</div>
           <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: '#282838', letterSpacing: 2 }}>camera placement tool</div>
           <div style={{ width: 360 }}>
             <UploadZone onImageLoad={handleCreateProject} />

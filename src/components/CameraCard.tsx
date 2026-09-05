@@ -18,8 +18,8 @@ export default function CameraCard({ camera, armed, onArm }: Props) {
     <button
       onClick={onArm}
       style={{
-        background: armed ? 'rgba(0,212,255,0.08)' : '#191921',
-        border: `1px solid ${armed ? '#00d4ff' : '#2a2a3a'}`,
+        background: armed ? 'rgba(191,57,58,0.08)' : '#191921',
+        border: `1px solid ${armed ? '#bf393a' : '#2a2a3a'}`,
         borderRadius: 8,
         padding: '10px 12px',
         display: 'flex',
@@ -35,10 +35,10 @@ export default function CameraCard({ camera, armed, onArm }: Props) {
         <CameraShape type={camera.type} width={pw} height={ph} />
       </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: 'DM Mono', color: armed ? '#00d4ff' : '#e0e0e0', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontFamily: 'DM Mono', color: armed ? '#bf393a' : '#e0e0e0', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {camera.brand}
         </div>
-        <div style={{ fontFamily: 'DM Mono', color: armed ? '#00d4ff99' : '#888', fontSize: 10, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontFamily: 'DM Mono', color: armed ? '#bf393a99' : '#888', fontSize: 10, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {camera.model}
         </div>
         <div style={{ fontFamily: 'Orbitron', color: '#555', fontSize: 9, marginTop: 2, letterSpacing: 1 }}>
