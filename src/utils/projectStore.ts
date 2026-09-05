@@ -1,5 +1,7 @@
 import type { PlacedCamera } from '../types'
 import { makeThumbnail } from './thumbnail'
+import { DEFAULT_SUN } from './sunSettings'
+import type { SunSettings } from './sunSettings'
 
 const DB_NAME = 'camsim'
 const STORE_NAME = 'project'
@@ -13,8 +15,15 @@ export interface StoredProject {
   imageBlob: Blob
   thumbBlob?: Blob
   placedCameras: PlacedCamera[]
+  sunSettings: SunSettings
   createdAt: number
   savedAt: number
+}
+
+/* Filet de sécurité pour un enregistrement plus ancien qui n'aurait pas encore de
+   réglage soleil (avant qu'il ne devienne propre à chaque projet). */
+function normalizeProject(raw: StoredProject): StoredProject {
+  return raw.sunSettings ? raw : { ...raw, sunSettings: DEFAULT_SUN }
 }
 
 interface LegacyStoredProject {
@@ -45,7 +54,7 @@ export async function listProjects(): Promise<StoredProject[]> {
       req.onerror = () => reject(req.error)
     })
     db.close()
-    return result.sort((a, b) => b.savedAt - a.savedAt)
+    return result.map(normalizeProject).sort((a, b) => b.savedAt - a.savedAt)
   } catch {
     return []
   }
@@ -61,7 +70,7 @@ export async function getProject(id: string): Promise<StoredProject | null> {
       req.onerror = () => reject(req.error)
     })
     db.close()
-    return result
+    return result ? normalizeProject(result) : null
   } catch {
     return null
   }
@@ -146,6 +155,7 @@ export async function migrateLegacyProject(): Promise<void> {
       imageBlob: legacy.imageBlob,
       thumbBlob,
       placedCameras: legacy.placedCameras ?? [],
+      sunSettings: DEFAULT_SUN,
       createdAt: savedAt,
       savedAt,
     }

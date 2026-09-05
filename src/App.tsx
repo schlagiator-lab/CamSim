@@ -8,7 +8,7 @@ import {
   getActiveProjectId, setActiveProjectId, migrateLegacyProject,
 } from './utils/projectStore'
 import type { StoredProject } from './utils/projectStore'
-import { getSunSettings, setSunSettings } from './utils/sunSettings'
+import { DEFAULT_SUN } from './utils/sunSettings'
 import type { SunSettings } from './utils/sunSettings'
 import UploadZone from './components/UploadZone'
 import Workspace from './components/Workspace'
@@ -23,6 +23,7 @@ interface ActiveProjectMeta {
   id: string
   name: string
   thumbBlob?: Blob
+  sunSettings: SunSettings
   createdAt: number
 }
 
@@ -76,13 +77,14 @@ export default function App() {
   const [activeProject, setActiveProject] = useState<ActiveProjectMeta | null>(null)
   const [showProjects, setShowProjects] = useState(false)
   const [projects, setProjects] = useState<StoredProject[]>([])
-  const [sunSettings, setSunSettingsState] = useState<SunSettings>(() => getSunSettings())
   const [showSun, setShowSun] = useState(false)
   const workspaceRef = useRef<WorkspaceHandle>(null)
 
+  /* Propre à chaque projet (chaque photo a sa propre direction/puissance de soleil réelle) */
+  const sunSettings = activeProject?.sunSettings ?? DEFAULT_SUN
+
   const handleSunChange = (next: SunSettings) => {
-    setSunSettingsState(next)
-    setSunSettings(next)
+    setActiveProject(prev => prev ? { ...prev, sunSettings: next } : prev)
   }
 
   const handleImageZoomChange = useCallback((zoom: number) => {
@@ -101,7 +103,7 @@ export default function App() {
           if (project) {
             loadImage(project.imageBlob)
             restorePlacedCameras(project.placedCameras)
-            setActiveProject({ id: project.id, name: project.name, thumbBlob: project.thumbBlob, createdAt: project.createdAt })
+            setActiveProject({ id: project.id, name: project.name, thumbBlob: project.thumbBlob, sunSettings: project.sunSettings, createdAt: project.createdAt })
           } else {
             setActiveProjectId(null)
           }
@@ -123,6 +125,7 @@ export default function App() {
         imageBlob: imageData.blob,
         thumbBlob: activeProject.thumbBlob,
         placedCameras,
+        sunSettings: activeProject.sunSettings,
         createdAt: activeProject.createdAt,
         savedAt: Date.now(),
       })
@@ -155,6 +158,7 @@ export default function App() {
       imageBlob: imageData.blob,
       thumbBlob: activeProject.thumbBlob,
       placedCameras,
+      sunSettings: activeProject.sunSettings,
       createdAt: activeProject.createdAt,
       savedAt: Date.now(),
     })
@@ -175,7 +179,7 @@ export default function App() {
     const createdAt = Date.now()
     const name = `Projet du ${new Date(createdAt).toLocaleDateString('fr-FR')}`
     setActiveProjectId(id)
-    setActiveProject({ id, name, thumbBlob, createdAt })
+    setActiveProject({ id, name, thumbBlob, sunSettings: DEFAULT_SUN, createdAt })
     loadImage(file)
     restorePlacedCameras([])
     resetTransientUi()
@@ -188,7 +192,7 @@ export default function App() {
     const project = await getProject(id)
     if (!project) { await refreshProjects(); return }
     setActiveProjectId(id)
-    setActiveProject({ id: project.id, name: project.name, thumbBlob: project.thumbBlob, createdAt: project.createdAt })
+    setActiveProject({ id: project.id, name: project.name, thumbBlob: project.thumbBlob, sunSettings: project.sunSettings, createdAt: project.createdAt })
     loadImage(project.imageBlob)
     restorePlacedCameras(project.placedCameras)
     resetTransientUi()
@@ -202,7 +206,7 @@ export default function App() {
       const next = remaining[0]
       if (next) {
         setActiveProjectId(next.id)
-        setActiveProject({ id: next.id, name: next.name, thumbBlob: next.thumbBlob, createdAt: next.createdAt })
+        setActiveProject({ id: next.id, name: next.name, thumbBlob: next.thumbBlob, sunSettings: next.sunSettings, createdAt: next.createdAt })
         loadImage(next.imageBlob)
         restorePlacedCameras(next.placedCameras)
       } else {
