@@ -8,8 +8,8 @@ export type BottomMode = 'idle' | 'cam-select' | 'armed' | 'cam-edit-list' | 'ca
 export function getBarHeight(mode: BottomMode): number {
   if (mode === 'cam-select') return 152
   if (mode === 'cam-edit-list') return 152
-  if (mode === 'cam-selected') return 205
-  if (mode === 'idle') return 66
+  if (mode === 'cam-selected') return 165
+  if (mode === 'idle') return 120
   return 60 // armed
 }
 
@@ -26,6 +26,9 @@ interface Props {
   onSelectForEdit: (id: string) => void
   onCancelArmed: () => void
   onDeselect: () => void
+  onOpenProjects: () => void
+  onOpenRenameProject: () => void
+  projectName: string
   onResize: (id: string, scale: number) => void
   onDelete: (id: string) => void
   onDuplicate: (id: string) => void
@@ -81,6 +84,7 @@ export default function BottomBar({
   onOpenPanel, onClosePanel, onOpenEditList, onCloseEditList,
   onSelectCamera, onSelectForEdit, onCancelArmed, onDeselect,
   onResize, onDelete, onDuplicate, onUpdateLabel, onToggleLabel, onUpdateLabelColor, onUpdateWallTilt, onExport,
+  onOpenProjects, onOpenRenameProject, projectName,
   imageZoom, onImageZoomChange,
 }: Props) {
   const selCam = selectedCamera ? cameras.find(c => c.id === selectedCamera.cameraId) : null
@@ -126,30 +130,57 @@ export default function BottomBar({
       pointerEvents: disabled ? 'none' as const : 'auto' as const,
     })
     return (
-      <div style={{ ...base, height: safeH(66), paddingBottom: 'env(safe-area-inset-bottom, 0px)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
-        <button
-          onClick={onOpenPanel}
-          style={tabStyle(false, false)}
-          onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
-          onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
-        >
-          <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 300 }}>+</span>
-          <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>AJOUTER UNE CAMÉRA</span>
-        </button>
-        <button
-          onClick={hasCameras ? onOpenEditList : undefined}
-          style={tabStyle(false, !hasCameras)}
-          onMouseEnter={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
-          onMouseLeave={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
-        >
-          <span style={{ fontSize: 15, lineHeight: 1 }}>✎</span>
-          <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MODIFIER UNE CAMÉRA</span>
-        </button>
-        {canExport && (
-          <button style={{ ...exportBtn, height: 48, padding: '5px 12px', flexShrink: 0 }} onClick={onExport}>
-            EXPORTER
+      <div style={{ ...base, height: safeH(120), display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px 16px', gap: 8, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' }}>
+        {/* Rangée 1 : actions sur les caméras (inchangée, simplement remontée) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={onOpenPanel}
+            style={tabStyle(false, false)}
+            onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
+            onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 300 }}>+</span>
+            <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>AJOUTER UNE CAMÉRA</span>
           </button>
-        )}
+          <button
+            onClick={hasCameras ? onOpenEditList : undefined}
+            style={tabStyle(false, !hasCameras)}
+            onMouseEnter={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
+            onMouseLeave={e => { if (!hasCameras) return; const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
+          >
+            <span style={{ fontSize: 15, lineHeight: 1 }}>✎</span>
+            <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MODIFIER UNE CAMÉRA</span>
+          </button>
+          {canExport && (
+            <button style={{ ...exportBtn, height: 48, padding: '5px 12px', flexShrink: 0 }} onClick={onExport}>
+              EXPORTER
+            </button>
+          )}
+        </div>
+
+        {/* Rangée 2 : accès projet, regroupé ici pour libérer les coins de l'écran
+            (le logo reste seul en haut à gauche, le soleil seul en haut à droite) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={onOpenProjects}
+            style={tabStyle(false, false)}
+            onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
+            onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
+          >
+            <span style={{ fontSize: 15, lineHeight: 1 }}>🗂</span>
+            <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1 }}>MES PROJETS</span>
+          </button>
+          <button
+            onClick={onOpenRenameProject}
+            style={tabStyle(false, false)}
+            title={projectName}
+            onMouseEnter={e => { const t = e.currentTarget; t.style.borderColor = '#bf393a'; t.style.background = 'rgba(191,57,58,0.14)' }}
+            onMouseLeave={e => { const t = e.currentTarget; t.style.borderColor = 'rgba(191,57,58,0.28)'; t.style.background = 'rgba(191,57,58,0.04)' }}
+          >
+            <span style={{ fontSize: 15, lineHeight: 1 }}>🏷</span>
+            <span style={{ fontSize: 7.5, letterSpacing: 1.5, lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>NOM DU PROJET</span>
+          </button>
+        </div>
       </div>
     )
   }
@@ -263,7 +294,7 @@ export default function BottomBar({
   /* ── cam-selected : édition ── */
   if (mode === 'cam-selected' && selectedCamera && selCam) {
     return (
-      <div style={{ ...base, height: 165, display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 7 }}>
+      <div style={{ ...base, height: safeH(165), display: 'flex', flexDirection: 'column', padding: '8px 20px', gap: 7, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' }}>
 
         {/* Ligne étiquette : remontée en haut du panneau pour rester visible même si le bas
             de l'écran est rogné (barre d'adresse mobile, encoche, etc.) */}

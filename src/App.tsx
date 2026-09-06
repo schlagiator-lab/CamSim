@@ -15,6 +15,7 @@ import Workspace from './components/Workspace'
 import BottomBar, { getBarHeight } from './components/BottomBar'
 import DPad, { STEP as NUDGE_STEP } from './components/DPad'
 import ProjectsSheet from './components/ProjectsSheet'
+import RenameProjectSheet from './components/RenameProjectSheet'
 import SunSheet from './components/SunSheet'
 import type { BottomMode } from './components/BottomBar'
 import type { WorkspaceHandle } from './components/Workspace'
@@ -78,6 +79,7 @@ export default function App() {
   const [showProjects, setShowProjects] = useState(false)
   const [projects, setProjects] = useState<StoredProject[]>([])
   const [showSun, setShowSun] = useState(false)
+  const [showRenameProject, setShowRenameProject] = useState(false)
   const workspaceRef = useRef<WorkspaceHandle>(null)
 
   /* Propre à chaque projet (chaque photo a sa propre direction/puissance de soleil réelle) */
@@ -301,6 +303,7 @@ export default function App() {
 
       if (e.key === 'Escape') {
         if (showProjects) { setShowProjects(false); return }
+        if (showRenameProject) { setShowRenameProject(false); return }
         if (showSun) { setShowSun(false); return }
         if (armedCameraId) { setArmedCameraId(null); return }
         if (showPanel) { setShowPanel(false); return }
@@ -324,11 +327,11 @@ export default function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showProjects, showSun, armedCameraId, showPanel, showEditList, selectedId, handleNudge, handleDelete, handleDeselect])
+  }, [showProjects, showRenameProject, showSun, armedCameraId, showPanel, showEditList, selectedId, handleNudge, handleDelete, handleDeselect])
 
   const handleExport = async () => {
     if (!imageData) return
-    await exportImage(imageData, placedCameras, sunSettings)
+    await exportImage(imageData, placedCameras, sunSettings, activeProject?.name)
   }
 
   const canExport = !!imageData && placedCameras.length > 0
@@ -342,9 +345,11 @@ export default function App() {
     <>
       {imageError && <ErrorBanner message={imageError} onDismiss={clearImageError} />}
 
-      {/* Marque + accès au gestionnaire de projets : toujours visible, avec ou sans photo chargée.
+      {/* Marque : toujours visible, avec ou sans photo chargée, seule en haut à gauche
+          (l'accès aux projets a été déplacé dans l'onglet "Mes projets" du bas — voir
+          BottomBar — pour ne plus encombrer les coins de l'écran).
           top tient compte de l'encoche/Dynamic Island (sinon inaccessible sous la barre de statut iOS). */}
-      <div style={{ position: 'fixed', top: 'max(12px, env(safe-area-inset-top, 0px))', left: 16, zIndex: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'fixed', top: 'max(12px, env(safe-area-inset-top, 0px))', left: 16, zIndex: 20, display: 'flex', alignItems: 'center' }}>
         {/* Logo à la place du texte "CAMSIM" : élément d'UI uniquement, jamais dessiné dans
             l'export (exportImage.ts ne peint que la photo + les caméras placées). */}
         <img
@@ -353,23 +358,12 @@ export default function App() {
           draggable={false}
           style={{ height: 26, width: 26, borderRadius: 6, userSelect: 'none', opacity: 0.92 }}
         />
+      </div>
+
+      {/* Réglage du soleil : basculé en haut à droite, seul, à l'opposé du logo. */}
+      <div style={{ position: 'fixed', top: 'max(12px, env(safe-area-inset-top, 0px))', right: 16, zIndex: 20, display: 'flex', alignItems: 'center' }}>
         <button
-          onClick={() => { setShowProjects(true); setShowSun(false) }}
-          title="Mes projets"
-          aria-label="Mes projets"
-          style={{
-            width: 26, height: 26,
-            background: 'rgba(13,13,15,0.82)',
-            border: '1px solid rgba(191,57,58,0.30)',
-            borderRadius: 6,
-            color: '#bf393a',
-            fontSize: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >🗂</button>
-        <button
-          onClick={() => { setShowSun(true); setShowProjects(false) }}
+          onClick={() => { setShowSun(true); setShowProjects(false); setShowRenameProject(false) }}
           title="Réglage du soleil"
           aria-label="Réglage du soleil"
           style={{
@@ -459,6 +453,9 @@ export default function App() {
               onUpdateLabelColor={updateLabelColor}
               onUpdateWallTilt={updateWallTilt}
               onExport={handleExport}
+              onOpenProjects={() => { setShowProjects(true); setShowSun(false); setShowRenameProject(false) }}
+              onOpenRenameProject={() => { setShowRenameProject(true); setShowProjects(false); setShowSun(false) }}
+              projectName={activeProject?.name ?? ''}
               imageZoom={imageZoom}
               onImageZoomChange={handleImageZoomChange}
             />
@@ -482,6 +479,13 @@ export default function App() {
         settings={sunSettings}
         onChange={handleSunChange}
         onClose={() => setShowSun(false)}
+      />
+
+      <RenameProjectSheet
+        open={showRenameProject}
+        name={activeProject?.name ?? ''}
+        onRename={name => { if (activeProject) handleRenameProject(activeProject.id, name) }}
+        onClose={() => setShowRenameProject(false)}
       />
     </>
   )
