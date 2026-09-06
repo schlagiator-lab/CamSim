@@ -181,7 +181,7 @@ function getVectorShapeCanvas(type: CameraType, w: number, h: number): HTMLCanva
    "Mes projets" / l'onglet "Nom du projet") : c'est ce nom que l'utilisateur voit et
    modifie, il doit donc se retrouver tel quel dans le fichier exporté plutôt qu'un
    nom générique fixe. */
-function toFileName(projectName: string): string {
+export function toFileName(projectName: string): string {
   const cleaned = projectName
     .trim()
     .replace(/[\\/:*?"<>|]/g, '-')

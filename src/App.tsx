@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useImageLoader } from './hooks/useImageLoader'
 import { usePlacement } from './hooks/usePlacement'
-import { exportImage } from './utils/exportImage'
+import { exportImage, toFileName } from './utils/exportImage'
 import { makeThumbnail } from './utils/thumbnail'
 import {
   saveProject, listProjects, getProject, deleteProject, renameProject,
@@ -62,6 +62,44 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
   )
 }
 
+/* Confirmation d'export réussi : même emplacement/gabarit que ErrorBanner, mais dans les
+   tons de la marque (rouge normal, pas le rouge "danger" des suppressions) pour rester
+   dans la palette rouge/noir/blanc du logo. */
+function ExportBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 'max(16px, env(safe-area-inset-top, 0px))',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 100,
+        maxWidth: 'min(92vw, 420px)',
+        background: '#0d0d0f',
+        border: '1px solid #bf393a',
+        borderRadius: 8,
+        padding: '10px 12px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        fontFamily: 'DM Mono',
+        fontSize: 11,
+        lineHeight: 1.4,
+        color: '#fff',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+      }}
+    >
+      <span style={{ color: '#bf393a', flexShrink: 0 }}>✓</span>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        onClick={onDismiss}
+        aria-label="Fermer"
+        style={{ background: 'none', border: 'none', color: '#bf393a', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: 0, flexShrink: 0 }}
+      >×</button>
+    </div>
+  )
+}
+
 export default function App() {
   const { imageData, loadImage, error: imageError, clearError: clearImageError, reset: resetImage } = useImageLoader()
   const {
@@ -80,6 +118,7 @@ export default function App() {
   const [projects, setProjects] = useState<StoredProject[]>([])
   const [showSun, setShowSun] = useState(false)
   const [showRenameProject, setShowRenameProject] = useState(false)
+  const [exportNotice, setExportNotice] = useState<string | null>(null)
   const workspaceRef = useRef<WorkspaceHandle>(null)
 
   /* Propre à chaque projet (chaque photo a sa propre direction/puissance de soleil réelle) */
@@ -141,6 +180,13 @@ export default function App() {
     const t = setTimeout(clearImageError, 6000)
     return () => clearTimeout(t)
   }, [imageError, clearImageError])
+
+  /* Disparition automatique de la confirmation d'export */
+  useEffect(() => {
+    if (!exportNotice) return
+    const t = setTimeout(() => setExportNotice(null), 3500)
+    return () => clearTimeout(t)
+  }, [exportNotice])
 
   const refreshProjects = useCallback(async () => {
     setProjects(await listProjects())
@@ -332,6 +378,7 @@ export default function App() {
   const handleExport = async () => {
     if (!imageData) return
     await exportImage(imageData, placedCameras, sunSettings, activeProject?.name)
+    setExportNotice(`Export réussi : ${toFileName(activeProject?.name ?? '')}.jpg`)
   }
 
   const canExport = !!imageData && placedCameras.length > 0
@@ -344,6 +391,7 @@ export default function App() {
   return (
     <>
       {imageError && <ErrorBanner message={imageError} onDismiss={clearImageError} />}
+      {exportNotice && <ExportBanner message={exportNotice} onDismiss={() => setExportNotice(null)} />}
 
       {/* Marque : toujours visible, avec ou sans photo chargée, seule en haut à gauche
           (l'accès aux projets a été déplacé dans l'onglet "Mes projets" du bas — voir
