@@ -97,14 +97,20 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
      réouverture d'un projet), l'<img> n'a pas encore de dimensions au premier rendu et
      React ne se re-rend pas tout seul quand le navigateur termine la mise en page de
      l'image — les caméras se retrouvaient alors placées avec une taille de secours
-     (800×600) jusqu'au prochain re-render (ex. un léger déplacement de la vue). */
+     (800×600) jusqu'au prochain re-render (ex. un léger déplacement de la vue).
+     Important : clientWidth/clientHeight (taille de mise en page, PAS getBoundingClientRect
+     qui reflète la taille après le zoom/pan CSS du Workspace) — les positions des caméras
+     (cx = x% * svgW) sont exprimées dans le repère non transformé du SVG ; en utiliser une
+     taille déjà mise à l'échelle par le zoom décalait toutes les caméras dès que le zoom
+     de la vue différait de 1 (ou changeait d'un projet à l'autre). */
   const [svgSize, setSvgSize] = useState({ w: 800, h: 600 })
   useEffect(() => {
     const el = svgRef.current
     if (!el) return
     const update = () => {
-      const r = el.getBoundingClientRect()
-      if (r.width > 0 && r.height > 0) setSvgSize({ w: r.width, h: r.height })
+      const w = el.clientWidth
+      const h = el.clientHeight
+      if (w > 0 && h > 0) setSvgSize({ w, h })
     }
     update()
     const ro = new ResizeObserver(update)
