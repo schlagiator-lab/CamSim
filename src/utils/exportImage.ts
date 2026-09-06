@@ -177,7 +177,19 @@ function getVectorShapeCanvas(type: CameraType, w: number, h: number): HTMLCanva
   return canvas
 }
 
-export async function exportImage(imageData: LoadedImage, placedCameras: PlacedCamera[], sunSettings: SunSettings) {
+/* Dérive un nom de fichier sûr à partir du nom du projet (celui modifiable dans
+   "Mes projets" / l'onglet "Nom du projet") : c'est ce nom que l'utilisateur voit et
+   modifie, il doit donc se retrouver tel quel dans le fichier exporté plutôt qu'un
+   nom générique fixe. */
+function toFileName(projectName: string): string {
+  const cleaned = projectName
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+  return cleaned || 'camsim-export'
+}
+
+export async function exportImage(imageData: LoadedImage, placedCameras: PlacedCamera[], sunSettings: SunSettings, projectName = 'camsim-export') {
   const { src, naturalWidth, naturalHeight } = imageData
   const canvas = document.createElement('canvas')
   canvas.width = naturalWidth
@@ -253,7 +265,7 @@ export async function exportImage(imageData: LoadedImage, placedCameras: PlacedC
   }
 
   const link = document.createElement('a')
-  link.download = 'camsim-export.jpg'
+  link.download = `${toFileName(projectName)}.jpg`
   link.href = canvas.toDataURL('image/jpeg', 0.93)
   link.click()
 }
