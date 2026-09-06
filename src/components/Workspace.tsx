@@ -1,4 +1,4 @@
-import { Fragment, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { Fragment, useRef, useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import type { PlacedCamera } from '../types'
 import type { LoadedImage } from '../hooks/useImageLoader'
 import type { SunSettings } from '../utils/sunSettings'
@@ -92,6 +92,26 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
 
   const getSvgRect = () => svgRef.current?.getBoundingClientRect() ?? null
 
+  /* Taille réelle du SVG, tenue à jour via ResizeObserver plutôt que lue directement
+     sur svgRef.current pendant le render : au chargement d'une nouvelle photo (ex.
+     réouverture d'un projet), l'<img> n'a pas encore de dimensions au premier rendu et
+     React ne se re-rend pas tout seul quand le navigateur termine la mise en page de
+     l'image — les caméras se retrouvaient alors placées avec une taille de secours
+     (800×600) jusqu'au prochain re-render (ex. un léger déplacement de la vue). */
+  const [svgSize, setSvgSize] = useState({ w: 800, h: 600 })
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const update = () => {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) setSvgSize({ w: r.width, h: r.height })
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [imageData.src])
+
   const handleTap = useCallback((clientX: number, clientY: number) => {
     if (draggingRef.current) return
     const rect = getSvgRect()
@@ -134,9 +154,8 @@ const Workspace = forwardRef<WorkspaceHandle, Props>(function Workspace({
           {placedCameras.map(placed => {
             const cam = cameras.find(c => c.id === placed.cameraId)
             if (!cam) return null
-            const svgEl = svgRef.current
-            const svgW = svgEl?.clientWidth ?? 800
-            const svgH = svgEl?.clientHeight ?? 600
+            const svgW = svgSize.w
+            const svgH = svgSize.h
             const cw = svgW * BASE_SCALE * placed.scale
             const ch = cw * (cam.realHeight / cam.realWidth)
             const cx = placed.x / 100 * svgW
