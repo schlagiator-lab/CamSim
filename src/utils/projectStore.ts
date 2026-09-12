@@ -50,8 +50,22 @@ function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME)
       if (!db.objectStoreNames.contains(CLIENT_STORE_NAME)) db.createObjectStore(CLIENT_STORE_NAME)
     }
-    req.onsuccess = () => resolve(req.result)
+    req.onsuccess = () => {
+      const db = req.result
+      /* Si un futur changement de schéma est demandé ailleurs (autre onglet)
+         pendant que cette connexion est ouverte, on la referme spontanément
+         plutôt que de bloquer indéfiniment cette autre ouverture. */
+      db.onversionchange = () => db.close()
+      resolve(db)
+    }
     req.onerror = () => reject(req.error)
+    req.onblocked = () => {
+      /* Une connexion plus ancienne (autre onglet resté ouvert depuis avant
+         une mise à jour du schéma) empêche la montée de version : on
+         n'attend pas indéfiniment, on remonte une erreur exploitable par
+         l'appelant plutôt que de laisser la promesse ne jamais se résoudre. */
+      reject(new Error('IndexedDB bloqué par une autre connexion ouverte (fermez les autres onglets/fenêtres de l\'application et réessayez).'))
+    }
   })
 }
 

@@ -50,6 +50,9 @@ export default function ProjectsSheet({
   const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  /* Permet d'accéder à l'écran des dossiers même sans en avoir encore créé
+     (lien « + Dossier client » depuis la vue à plat). */
+  const [forceFolderList, setForceFolderList] = useState(false)
   const [creatingClient, setCreatingClient] = useState(false)
   const [newClientName, setNewClientName] = useState('')
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
@@ -72,6 +75,7 @@ export default function ProjectsSheet({
       setConfirmDeleteId(null)
       if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current)
       setSelectedClientId(null)
+      setForceFolderList(false)
       setCreatingClient(false)
       setEditingClientId(null)
       setConfirmDeleteClientId(null)
@@ -143,14 +147,27 @@ export default function ProjectsSheet({
     setSelectedClientId(client.id)
   }
 
-  const selectedClient = selectedClientId && selectedClientId !== UNFILED
-    ? clients.find(c => c.id === selectedClientId) ?? null
-    : null
-  const showingUnfiled = selectedClientId === UNFILED
+  /* Tant qu'aucun dossier client n'existe, on saute l'écran de sélection et on
+     retrouve le comportement historique (liste des projets à plat) : la
+     nouveauté ne doit rien changer pour qui n'utilise pas les dossiers. */
+  const hasClients = clients.length > 0
+  const showFolderList = selectedClientId === null && (hasClients || forceFolderList)
+  const flatMode = selectedClientId === null && !showFolderList
+  const activeGroupId = flatMode ? UNFILED : selectedClientId
 
-  const currentProjects = selectedClientId
-    ? grouped.get(selectedClientId) ?? []
+  const selectedClient = activeGroupId && activeGroupId !== UNFILED
+    ? clients.find(c => c.id === activeGroupId) ?? null
+    : null
+  const showingUnfiled = activeGroupId === UNFILED
+
+  const currentProjects = !showFolderList && activeGroupId
+    ? grouped.get(activeGroupId) ?? []
     : []
+
+  const goBack = () => {
+    if (selectedClientId !== null) setSelectedClientId(null)
+    else setForceFolderList(false)
+  }
 
   return (
     <div
@@ -167,28 +184,37 @@ export default function ProjectsSheet({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 6px', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          {selectedClientId && (
+          {(selectedClientId !== null || forceFolderList) && (
             <button
-              onClick={() => setSelectedClientId(null)}
-              title="Retour aux dossiers"
+              onClick={goBack}
+              title="Retour"
               aria-label="Retour aux dossiers"
               style={{ ...iconBtn, color: '#bf393a', fontSize: 14 }}
             >←</button>
           )}
           <span style={{
-            fontFamily: 'Orbitron', color: selectedClientId ? '#ccc' : '#444', fontSize: 9, letterSpacing: 2,
+            fontFamily: 'Orbitron', color: selectedClientId !== null ? '#ccc' : '#444', fontSize: 9, letterSpacing: 2,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            {selectedClientId ? (showingUnfiled ? 'SANS DOSSIER' : (selectedClient?.name.toUpperCase() ?? 'DOSSIER')) : 'MES PROJETS'}
+            {selectedClientId !== null ? (showingUnfiled ? 'SANS DOSSIER' : (selectedClient?.name.toUpperCase() ?? 'DOSSIER')) : 'MES PROJETS'}
           </span>
         </div>
-        <button
-          onClick={onClose}
-          style={{ background: 'none', border: '1px solid #282834', borderRadius: 4, color: '#555', cursor: 'pointer', fontSize: 14, lineHeight: 1, width: 24, height: 24, flexShrink: 0 }}
-        >×</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {flatMode && (
+            <button
+              onClick={() => setForceFolderList(true)}
+              title="Organiser mes projets par dossier client"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontFamily: 'DM Mono', fontSize: 8, letterSpacing: 0.5, whiteSpace: 'nowrap' }}
+            >🗂 + DOSSIER</button>
+          )}
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: '1px solid #282834', borderRadius: 4, color: '#555', cursor: 'pointer', fontSize: 14, lineHeight: 1, width: 24, height: 24, flexShrink: 0 }}
+          >×</button>
+        </div>
       </div>
 
-      {!selectedClientId ? (
+      {showFolderList ? (
         /* ── Niveau 1 : dossiers clients ── */
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px 14px' }}>
           {creatingClient ? (
@@ -330,7 +356,7 @@ export default function ProjectsSheet({
             style={{ display: 'none' }}
             onChange={e => {
               const f = e.target.files?.[0]
-              if (f) onCreateNew(f, showingUnfiled ? null : selectedClientId)
+              if (f) onCreateNew(f, showingUnfiled ? null : activeGroupId)
               e.target.value = ''
             }}
           />
