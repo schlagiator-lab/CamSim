@@ -50,9 +50,7 @@ export default function ProjectsSheet({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  /* Initialisé avec le dernier dossier consulté (persisté) : rouvrir « Mes
-     projets » retombe directement dedans plutôt que sur la liste des dossiers. */
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(() => getLastFolderId())
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   /* Permet d'accéder à l'écran des dossiers même sans en avoir encore créé
      (lien « + Dossier client » depuis la vue à plat). */
   const [forceFolderList, setForceFolderList] = useState(false)
@@ -73,7 +71,15 @@ export default function ProjectsSheet({
   }, [projects])
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      /* Ce composant reste monté en permanence (il rend juste `null` quand
+         fermé) : sans ceci, le dossier n'est relu depuis le stockage qu'au
+         tout premier montage, et un retour à la liste des dossiers plus tôt
+         dans la session bloquerait `selectedClientId` à `null` pour le reste
+         de la session malgré la valeur mémorisée. On la relit donc à chaque
+         ouverture du panneau. */
+      setSelectedClientId(getLastFolderId())
+    } else {
       setEditingId(null)
       setConfirmDeleteId(null)
       if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current)
