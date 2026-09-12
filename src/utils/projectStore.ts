@@ -213,6 +213,28 @@ export async function deleteClient(id: string): Promise<void> {
   }
 }
 
+const LAST_FOLDER_KEY = 'camsim-last-project-folder'
+
+/* Dernier dossier client (ou « sans dossier ») parcouru dans Mes projets, pour
+   y retomber directement au prochain ouverture plutôt que de repartir de la
+   liste des dossiers. */
+export function getLastFolderId(): string | null {
+  try {
+    return localStorage.getItem(LAST_FOLDER_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setLastFolderId(id: string | null): void {
+  try {
+    if (id) localStorage.setItem(LAST_FOLDER_KEY, id)
+    else localStorage.removeItem(LAST_FOLDER_KEY)
+  } catch {
+    /* stockage indisponible */
+  }
+}
+
 export function getActiveProjectId(): string | null {
   try {
     return localStorage.getItem(ACTIVE_ID_KEY)

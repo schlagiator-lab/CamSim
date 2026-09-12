@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { StoredProject, StoredClient } from '../utils/projectStore'
+import { getLastFolderId, setLastFolderId } from '../utils/projectStore'
 
 interface Props {
   open: boolean
@@ -49,7 +50,9 @@ export default function ProjectsSheet({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  /* Initialisé avec le dernier dossier consulté (persisté) : rouvrir « Mes
+     projets » retombe directement dedans plutôt que sur la liste des dossiers. */
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(() => getLastFolderId())
   /* Permet d'accéder à l'écran des dossiers même sans en avoir encore créé
      (lien « + Dossier client » depuis la vue à plat). */
   const [forceFolderList, setForceFolderList] = useState(false)
@@ -74,7 +77,6 @@ export default function ProjectsSheet({
       setEditingId(null)
       setConfirmDeleteId(null)
       if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current)
-      setSelectedClientId(null)
       setForceFolderList(false)
       setCreatingClient(false)
       setEditingClientId(null)
@@ -131,7 +133,7 @@ export default function ProjectsSheet({
       if (confirmClientTimeoutRef.current) clearTimeout(confirmClientTimeoutRef.current)
       setConfirmDeleteClientId(null)
       onDeleteClient(id)
-      if (selectedClientId === id) setSelectedClientId(null)
+      if (selectedClientId === id) enterFolder(null)
       return
     }
     setConfirmDeleteClientId(id)
@@ -144,16 +146,22 @@ export default function ProjectsSheet({
     setNewClientName('')
     if (!name) return
     const client = await onCreateClient(name)
-    setSelectedClientId(client.id)
+    enterFolder(client.id)
   }
+
+  /* Le dossier mémorisé (dernier consulté) peut avoir été supprimé entretemps :
+     on l'ignore alors silencieusement plutôt que d'afficher un dossier vide. */
+  const validSelectedClientId = selectedClientId === null || selectedClientId === UNFILED || clients.some(c => c.id === selectedClientId)
+    ? selectedClientId
+    : null
 
   /* Tant qu'aucun dossier client n'existe, on saute l'écran de sélection et on
      retrouve le comportement historique (liste des projets à plat) : la
      nouveauté ne doit rien changer pour qui n'utilise pas les dossiers. */
   const hasClients = clients.length > 0
-  const showFolderList = selectedClientId === null && (hasClients || forceFolderList)
-  const flatMode = selectedClientId === null && !showFolderList
-  const activeGroupId = flatMode ? UNFILED : selectedClientId
+  const showFolderList = validSelectedClientId === null && (hasClients || forceFolderList)
+  const flatMode = validSelectedClientId === null && !showFolderList
+  const activeGroupId = flatMode ? UNFILED : validSelectedClientId
 
   const selectedClient = activeGroupId && activeGroupId !== UNFILED
     ? clients.find(c => c.id === activeGroupId) ?? null
@@ -164,8 +172,14 @@ export default function ProjectsSheet({
     ? grouped.get(activeGroupId) ?? []
     : []
 
+  /* Retenu pour qu'un prochain « MES PROJETS » retombe directement dedans. */
+  const enterFolder = (id: string | null) => {
+    setSelectedClientId(id)
+    setLastFolderId(id)
+  }
+
   const goBack = () => {
-    if (selectedClientId !== null) setSelectedClientId(null)
+    if (validSelectedClientId !== null) setSelectedClientId(null)
     else setForceFolderList(false)
   }
 
@@ -184,7 +198,7 @@ export default function ProjectsSheet({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 6px', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          {(selectedClientId !== null || forceFolderList) && (
+          {(validSelectedClientId !== null || forceFolderList) && (
             <button
               onClick={goBack}
               title="Retour"
@@ -193,10 +207,10 @@ export default function ProjectsSheet({
             >←</button>
           )}
           <span style={{
-            fontFamily: 'Orbitron', color: selectedClientId !== null ? '#ccc' : '#444', fontSize: 9, letterSpacing: 2,
+            fontFamily: 'Orbitron', color: validSelectedClientId !== null ? '#ccc' : '#444', fontSize: 9, letterSpacing: 2,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            {selectedClientId !== null ? (showingUnfiled ? 'SANS DOSSIER' : (selectedClient?.name.toUpperCase() ?? 'DOSSIER')) : 'MES PROJETS'}
+            {validSelectedClientId !== null ? (showingUnfiled ? 'SANS DOSSIER' : (selectedClient?.name.toUpperCase() ?? 'DOSSIER')) : 'MES PROJETS'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -262,7 +276,7 @@ export default function ProjectsSheet({
             return (
               <div
                 key={c.id}
-                onClick={() => { if (!isEditing) setSelectedClientId(c.id) }}
+                onClick={() => { if (!isEditing) enterFolder(c.id) }}
                 style={{
                   flexShrink: 0, width: CARD_W,
                   background: '#0f0f14', border: '1px solid #222232', borderRadius: 8,
@@ -317,7 +331,7 @@ export default function ProjectsSheet({
 
           {unfiledProjects.length > 0 && (
             <div
-              onClick={() => setSelectedClientId(UNFILED)}
+              onClick={() => enterFolder(UNFILED)}
               style={{
                 flexShrink: 0, width: CARD_W,
                 background: '#0f0f14', border: '1px solid #222232', borderRadius: 8,
