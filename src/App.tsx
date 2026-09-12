@@ -6,8 +6,9 @@ import { makeThumbnail } from './utils/thumbnail'
 import {
   saveProject, listProjects, getProject, deleteProject, renameProject,
   getActiveProjectId, setActiveProjectId, migrateLegacyProject,
+  listClients, createClient, renameClient, deleteClient,
 } from './utils/projectStore'
-import type { StoredProject } from './utils/projectStore'
+import type { StoredProject, StoredClient } from './utils/projectStore'
 import { DEFAULT_SUN } from './utils/sunSettings'
 import type { SunSettings } from './utils/sunSettings'
 import UploadZone from './components/UploadZone'
@@ -23,6 +24,7 @@ import type { WorkspaceHandle } from './components/Workspace'
 interface ActiveProjectMeta {
   id: string
   name: string
+  clientId?: string
   thumbBlob?: Blob
   sunSettings: SunSettings
   createdAt: number
@@ -116,6 +118,7 @@ export default function App() {
   const [activeProject, setActiveProject] = useState<ActiveProjectMeta | null>(null)
   const [showProjects, setShowProjects] = useState(false)
   const [projects, setProjects] = useState<StoredProject[]>([])
+  const [clients, setClients] = useState<StoredClient[]>([])
   const [showSun, setShowSun] = useState(false)
   const [showRenameProject, setShowRenameProject] = useState(false)
   const [exportNotice, setExportNotice] = useState<string | null>(null)
@@ -144,7 +147,7 @@ export default function App() {
           if (project) {
             loadImage(project.imageBlob)
             restorePlacedCameras(project.placedCameras)
-            setActiveProject({ id: project.id, name: project.name, thumbBlob: project.thumbBlob, sunSettings: project.sunSettings, createdAt: project.createdAt })
+            setActiveProject({ id: project.id, name: project.name, clientId: project.clientId, thumbBlob: project.thumbBlob, sunSettings: project.sunSettings, createdAt: project.createdAt })
           } else {
             setActiveProjectId(null)
           }
@@ -163,6 +166,7 @@ export default function App() {
       saveProject({
         id: activeProject.id,
         name: activeProject.name,
+        clientId: activeProject.clientId,
         imageBlob: imageData.blob,
         thumbBlob: activeProject.thumbBlob,
         placedCameras,
@@ -192,9 +196,13 @@ export default function App() {
     setProjects(await listProjects())
   }, [])
 
+  const refreshClients = useCallback(async () => {
+    setClients(await listClients())
+  }, [])
+
   useEffect(() => {
-    if (showProjects) refreshProjects()
-  }, [showProjects, refreshProjects])
+    if (showProjects) { refreshProjects(); refreshClients() }
+  }, [showProjects, refreshProjects, refreshClients])
 
   /* Sauvegarde immédiate du projet en cours (contourne le debounce de 500 ms) avant
      de basculer vers un autre projet, pour ne pas perdre le tout dernier changement. */
@@ -203,6 +211,7 @@ export default function App() {
     await saveProject({
       id: activeProject.id,
       name: activeProject.name,
+      clientId: activeProject.clientId,
       imageBlob: imageData.blob,
       thumbBlob: activeProject.thumbBlob,
       placedCameras,
@@ -219,7 +228,7 @@ export default function App() {
     setShowEditList(false)
   }
 
-  const handleCreateProject = async (file: File) => {
+  const handleCreateProject = async (file: File, clientId: string | null) => {
     await flushActiveProject()
     let thumbBlob: Blob | undefined
     try { thumbBlob = await makeThumbnail(file) } catch { /* pas grave, pas de vignette */ }
@@ -227,7 +236,7 @@ export default function App() {
     const createdAt = Date.now()
     const name = `Projet du ${new Date(createdAt).toLocaleDateString('fr-FR')}`
     setActiveProjectId(id)
-    setActiveProject({ id, name, thumbBlob, sunSettings: DEFAULT_SUN, createdAt })
+    setActiveProject({ id, name, clientId: clientId ?? undefined, thumbBlob, sunSettings: DEFAULT_SUN, createdAt })
     loadImage(file)
     restorePlacedCameras([])
     resetTransientUi()
@@ -240,7 +249,7 @@ export default function App() {
     const project = await getProject(id)
     if (!project) { await refreshProjects(); return }
     setActiveProjectId(id)
-    setActiveProject({ id: project.id, name: project.name, thumbBlob: project.thumbBlob, sunSettings: project.sunSettings, createdAt: project.createdAt })
+    setActiveProject({ id: project.id, name: project.name, clientId: project.clientId, thumbBlob: project.thumbBlob, sunSettings: project.sunSettings, createdAt: project.createdAt })
     loadImage(project.imageBlob)
     restorePlacedCameras(project.placedCameras)
     resetTransientUi()
@@ -254,7 +263,7 @@ export default function App() {
       const next = remaining[0]
       if (next) {
         setActiveProjectId(next.id)
-        setActiveProject({ id: next.id, name: next.name, thumbBlob: next.thumbBlob, sunSettings: next.sunSettings, createdAt: next.createdAt })
+        setActiveProject({ id: next.id, name: next.name, clientId: next.clientId, thumbBlob: next.thumbBlob, sunSettings: next.sunSettings, createdAt: next.createdAt })
         loadImage(next.imageBlob)
         restorePlacedCameras(next.placedCameras)
       } else {
@@ -272,6 +281,22 @@ export default function App() {
     await renameProject(id, name)
     if (id === activeProject?.id) setActiveProject(prev => prev ? { ...prev, name } : prev)
     await refreshProjects()
+  }
+
+  const handleCreateClient = async (name: string) => {
+    const client = await createClient(name)
+    await refreshClients()
+    return client
+  }
+
+  const handleRenameClient = async (id: string, name: string) => {
+    await renameClient(id, name)
+    await refreshClients()
+  }
+
+  const handleDeleteClient = async (id: string) => {
+    await deleteClient(id)
+    await refreshClients()
   }
 
   const selectedCamera = placedCameras.find(p => p.id === selectedId) ?? null
@@ -433,7 +458,7 @@ export default function App() {
           <div style={{ fontFamily: 'Orbitron', fontSize: 26, color: '#bf393a', letterSpacing: 5 }}>CAMSIM</div>
           <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: '#282838', letterSpacing: 2 }}>camera placement tool</div>
           <div style={{ width: 360 }}>
-            <UploadZone onImageLoad={handleCreateProject} />
+            <UploadZone onImageLoad={file => handleCreateProject(file, null)} />
           </div>
         </div>
       ) : (
@@ -513,6 +538,7 @@ export default function App() {
 
       <ProjectsSheet
         open={showProjects}
+        clients={clients}
         projects={projects}
         activeProjectId={activeProject?.id ?? null}
         onClose={() => setShowProjects(false)}
@@ -520,6 +546,9 @@ export default function App() {
         onOpen={handleOpenProject}
         onDelete={handleDeleteProject}
         onRename={handleRenameProject}
+        onCreateClient={handleCreateClient}
+        onRenameClient={handleRenameClient}
+        onDeleteClient={handleDeleteClient}
       />
 
       <SunSheet
